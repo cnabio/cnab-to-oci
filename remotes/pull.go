@@ -48,6 +48,8 @@ func getIndex(ctx context.Context, ref reference.Named, resolver remotes.Resolve
 }
 
 func getConfig(ctx context.Context, ref reference.Named, resolver remotes.Resolver, index ocischemav1.Index) (oci.BundleConfig, error) {
+	// config is wrapped in an image manifest. So we first pull the manifest
+	// and then the config blob within it
 	configManifestDescriptor, err := oci.GetBundleConfigManifestDescriptor(&index)
 	if err != nil {
 		return oci.BundleConfig{}, fmt.Errorf("failed to get bundle config from %q: %s", ref, err)
