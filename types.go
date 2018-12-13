@@ -1,7 +1,13 @@
 package oci
 
 import (
+	"encoding/json"
+
 	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/docker/distribution"
+	"github.com/docker/distribution/manifest/schema2"
+	"github.com/opencontainers/go-digest"
+	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // BundleConfig discribes a cnab bundle runtime config
@@ -20,4 +26,37 @@ func CreateBundleConfig(b *bundle.Bundle) *BundleConfig {
 		Parameters:    b.Parameters,
 		Credentials:   b.Credentials,
 	}
+}
+
+// PrepareForPush serialize a bundle config, generates its image manifest, and its manifest descriptor
+func (c *BundleConfig) PrepareForPush() (blob []byte, manifest []byte, blobDescriptor ocischemav1.Descriptor, manifestDescriptor ocischemav1.Descriptor, err error) {
+	bytes, err := json.Marshal(c)
+	if err != nil {
+		return nil, nil, ocischemav1.Descriptor{}, ocischemav1.Descriptor{}, err
+	}
+	man, err := schema2.FromStruct(schema2.Manifest{
+		Versioned: schema2.SchemaVersion,
+		Config: distribution.Descriptor{
+			MediaType: schema2.MediaTypeImageConfig,
+			Size:      int64(len(bytes)),
+			Digest:    digest.FromBytes(bytes),
+		},
+	})
+	if err != nil {
+		return nil, nil, ocischemav1.Descriptor{}, ocischemav1.Descriptor{}, err
+	}
+	manBytes, err := man.MarshalJSON()
+	if err != nil {
+		return nil, nil, ocischemav1.Descriptor{}, ocischemav1.Descriptor{}, err
+	}
+	return bytes, manBytes, ocischemav1.Descriptor{
+			MediaType: schema2.MediaTypeImageConfig,
+			Size:      int64(len(bytes)),
+			Digest:    digest.FromBytes(bytes),
+		},
+		ocischemav1.Descriptor{
+			MediaType: schema2.MediaTypeManifest,
+			Digest:    digest.FromBytes(manBytes),
+			Size:      int64(len(manBytes)),
+		}, nil
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/docker/cnab-to-oci/test"
+	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"gotest.tools/assert"
@@ -16,10 +17,10 @@ func makeTestBundleConfig() *BundleConfig {
 func TestConvertFromFixedUpBundleToOCI(t *testing.T) {
 	bundleConfigDescriptor := ocischemav1.Descriptor{
 		Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
-		MediaType: "application/io.docker.cnab.config.v1.0.0-WD+json",
+		MediaType: schema2.MediaTypeManifest,
 		Size:      250,
 	}
-	targetRef := "registry/namespace/my-app:0.1.0"
+	targetRef := "my.registry/namespace/my-app:0.1.0"
 	src := test.MakeTestBundle()
 
 	expected := test.MakeTestOCIIndex()
@@ -57,19 +58,19 @@ func TestConvertFromFixedUpBundleToOCI(t *testing.T) {
 	src = test.MakeTestBundle()
 	src.InvocationImages[0].MediaType = "some-invalid-mediatype"
 	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
-	assert.ErrorContains(t, err, "unsupported media type \"some-invalid-mediatype\" for image \"registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341\"")
+	assert.ErrorContains(t, err, "unsupported media type \"some-invalid-mediatype\" for image \"my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341\"")
 
 	// All images must be in the same repository
 	src = test.MakeTestBundle()
-	src.InvocationImages[0].BaseImage.Image = "registry/namespace/other-repo@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341"
+	src.InvocationImages[0].BaseImage.Image = "my.registry/namespace/other-repo@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341"
 	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
-	assert.ErrorContains(t, err, "invalid invocation image: image \"registry/namespace/other-repo@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341\" is not in the same repository as \"docker.io/registry/namespace/my-app:0.1.0\"")
+	assert.ErrorContains(t, err, "invalid invocation image: image \"my.registry/namespace/other-repo@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341\" is not in the same repository as \"my.registry/namespace/my-app:0.1.0\"")
 
 	// Image reference must be digested
 	src = test.MakeTestBundle()
-	src.InvocationImages[0].BaseImage.Image = "registry/namespace/my-app:not-digested"
+	src.InvocationImages[0].BaseImage.Image = "my.registry/namespace/my-app:not-digested"
 	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
-	assert.ErrorContains(t, err, "invalid invocation image: image \"registry/namespace/my-app:not-digested\" is not a digested reference")
+	assert.ErrorContains(t, err, "invalid invocation image: image \"my.registry/namespace/my-app:not-digested\" is not a digested reference")
 
 	// Invalid reference
 	src = test.MakeTestBundle()
@@ -95,8 +96,11 @@ func TestGetConfigDescriptor(t *testing.T) {
 		Manifests: []ocischemav1.Descriptor{
 			ocischemav1.Descriptor{
 				Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
-				MediaType: "application/io.docker.cnab.config.v1.0.0-WD+json",
+				MediaType: schema2.MediaTypeManifest,
 				Size:      250,
+				Annotations: map[string]string{
+					CNABDescriptorTypeAnnotation: CNABDescriptorTypeConfig,
+				},
 			},
 			ocischemav1.Descriptor{
 				Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
@@ -120,19 +124,22 @@ func TestGetConfigDescriptor(t *testing.T) {
 	}
 	expected := ocischemav1.Descriptor{
 		Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
-		MediaType: "application/io.docker.cnab.config.v1.0.0-WD+json",
+		MediaType: schema2.MediaTypeManifest,
 		Size:      250,
+		Annotations: map[string]string{
+			CNABDescriptorTypeAnnotation: CNABDescriptorTypeConfig,
+		},
 	}
-	d, err := GetBundleConfigDescriptor(ix)
+	d, err := GetBundleConfigManifestDescriptor(ix)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, d)
 	ix.Manifests = ix.Manifests[1:]
-	_, err = GetBundleConfigDescriptor(ix)
+	_, err = GetBundleConfigManifestDescriptor(ix)
 	assert.ErrorContains(t, err, "bundle config not found")
 }
 
 func TestConvertFromOCIToBundle(t *testing.T) {
-	targetRef := "registry/namespace/my-app:0.1.0"
+	targetRef := "my.registry/namespace/my-app:0.1.0"
 	named, err := reference.ParseNormalizedNamed(targetRef)
 	assert.NilError(t, err)
 	ix := test.MakeTestOCIIndex()

@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/docker/distribution/manifest/schema2"
 	ocischema "github.com/opencontainers/image-spec/specs-go"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -83,8 +84,11 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 		Manifests: []ocischemav1.Descriptor{
 			ocischemav1.Descriptor{
 				Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
-				MediaType: "application/io.docker.cnab.config.v1.0.0-WD+json",
+				MediaType: schema2.MediaTypeManifest,
 				Size:      250,
+				Annotations: map[string]string{
+					"io.cnab.type": "config",
+				},
 			},
 			ocischemav1.Descriptor{
 				Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",

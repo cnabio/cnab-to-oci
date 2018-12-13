@@ -8,9 +8,10 @@ import (
 	"testing"
 
 	"github.com/containerd/containerd/content"
+	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes"
-	//"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/cnab-to-oci/test"
+	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -103,9 +104,12 @@ const (
   "schemaVersion": 1,
   "manifests": [
     {
-      "mediaType": "application/io.docker.cnab.config.v1.0.0-WD+json",
-      "digest": "sha256:e2337974e94637d3fab7004f87501e605b08bca3adf9ecd356909a9329da128a",
-      "size": 314
+      "mediaType":"application/vnd.docker.distribution.manifest.v2+json",
+      "digest":"sha256:f4807c40c28978674e881cb7808fa88d648b1cd19832a78238fc9e7d17443c03",
+      "size":315,
+      "annotations":{
+        "io.cnab.type":"config"
+      }
     },
     {
       "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
@@ -148,19 +152,23 @@ func TestPush(t *testing.T) {
 	// push the bundle
 	_, err = Push(context.Background(), b, ref, resolver)
 	assert.NilError(t, err)
-	assert.Equal(t, len(resolver.pushedReferences), 2)
-	assert.Equal(t, len(pusher.pushedDescriptors), 2)
-	assert.Equal(t, len(pusher.buffers), 2)
+	assert.Equal(t, len(resolver.pushedReferences), 3)
+	assert.Equal(t, len(pusher.pushedDescriptors), 3)
+	assert.Equal(t, len(pusher.buffers), 3)
 
 	// check pushed config
 	assert.Equal(t, "my.registry/namespace/my-app", resolver.pushedReferences[0])
-	assert.Equal(t, "application/io.docker.cnab.config.v1.0.0-WD+json", pusher.pushedDescriptors[0].MediaType)
+	assert.Equal(t, schema2.MediaTypeImageConfig, pusher.pushedDescriptors[0].MediaType)
 	assert.Equal(t, oneLiner(expectedBundleConfig), pusher.buffers[0].String())
 
+	// check pushed config manifest
+	assert.Equal(t, "my.registry/namespace/my-app", resolver.pushedReferences[1])
+	assert.Equal(t, schema2.MediaTypeManifest, pusher.pushedDescriptors[1].MediaType)
+
 	// check pushed bundle manifest index
-	assert.Equal(t, "my.registry/namespace/my-app:my-tag", resolver.pushedReferences[1])
-	assert.Equal(t, ocischemav1.MediaTypeImageIndex, pusher.pushedDescriptors[1].MediaType)
-	assert.Equal(t, oneLiner(expectedBundleManifest), pusher.buffers[1].String())
+	assert.Equal(t, "my.registry/namespace/my-app:my-tag", resolver.pushedReferences[2])
+	assert.Equal(t, images.MediaTypeDockerSchema2ManifestList, pusher.pushedDescriptors[2].MediaType)
+	assert.Equal(t, oneLiner(expectedBundleManifest), pusher.buffers[2].String())
 }
 
 func oneLiner(s string) string {
