@@ -28,7 +28,7 @@ func CreateBundleConfig(b *bundle.Bundle) *BundleConfig {
 	}
 }
 
-// PrepareForPush serialize a bundle config, generates its image manifest, and its manifest descriptor
+// PrepareForPush serializes a bundle config, generates its image manifest, and its manifest descriptor
 func (c *BundleConfig) PrepareForPush() (blob []byte, manifest []byte, blobDescriptor ocischemav1.Descriptor, manifestDescriptor ocischemav1.Descriptor, err error) {
 	bytes, err := json.Marshal(c)
 	if err != nil {
