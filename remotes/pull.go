@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes"
 	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/cnab-to-oci"
+	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -31,7 +33,7 @@ func getIndex(ctx context.Context, ref reference.Named, resolver remotes.Resolve
 	if err != nil {
 		return ocischemav1.Index{}, fmt.Errorf("failed to resolve bundle manifest %q: %s", ref, err)
 	}
-	if indexDescriptor.MediaType != ocischemav1.MediaTypeImageIndex {
+	if indexDescriptor.MediaType != ocischemav1.MediaTypeImageIndex && indexDescriptor.MediaType != images.MediaTypeDockerSchema2ManifestList {
 		return ocischemav1.Index{}, fmt.Errorf("invalid media type %q for bundle manifest", indexDescriptor.MediaType)
 	}
 	indexPayload, err := pullPayload(ctx, resolver, resolvedRef, indexDescriptor)
@@ -46,7 +48,9 @@ func getIndex(ctx context.Context, ref reference.Named, resolver remotes.Resolve
 }
 
 func getConfig(ctx context.Context, ref reference.Named, resolver remotes.Resolver, index ocischemav1.Index) (oci.BundleConfig, error) {
-	configDescriptor, err := oci.GetBundleConfigDescriptor(&index)
+	// config is wrapped in an image manifest. So we first pull the manifest
+	// and then the config blob within it
+	configManifestDescriptor, err := oci.GetBundleConfigManifestDescriptor(&index)
 	if err != nil {
 		return oci.BundleConfig{}, fmt.Errorf("failed to get bundle config from %q: %s", ref, err)
 	}
@@ -54,12 +58,29 @@ func getConfig(ctx context.Context, ref reference.Named, resolver remotes.Resolv
 	if err != nil {
 		return oci.BundleConfig{}, fmt.Errorf("invalid bundle config reference name %q: %s", ref, err)
 	}
-	configRef, err := reference.WithDigest(repoOnly, configDescriptor.Digest)
+	configManifestRef, err := reference.WithDigest(repoOnly, configManifestDescriptor.Digest)
 	if err != nil {
 		return oci.BundleConfig{}, fmt.Errorf("invalid bundle config reference name %q: %s", ref, err)
 	}
 
-	configPayload, err := pullPayload(ctx, resolver, configRef.String(), configDescriptor)
+	configManifestPayload, err := pullPayload(ctx, resolver, configManifestRef.String(), configManifestDescriptor)
+	if err != nil {
+		return oci.BundleConfig{}, fmt.Errorf("failed to pull bundle config manifest %q: %s", ref, err)
+	}
+	var manifest schema2.DeserializedManifest
+	if err := manifest.UnmarshalJSON(configManifestPayload); err != nil {
+		return oci.BundleConfig{}, err
+	}
+
+	configRef, err := reference.WithDigest(repoOnly, manifest.Config.Digest)
+	if err != nil {
+		return oci.BundleConfig{}, fmt.Errorf("invalid bundle config reference name %q: %s", ref, err)
+	}
+	configPayload, err := pullPayload(ctx, resolver, configRef.String(), ocischemav1.Descriptor{
+		Digest:    manifest.Config.Digest,
+		MediaType: manifest.Config.MediaType,
+		Size:      manifest.Config.Size,
+	})
 	if err != nil {
 		return oci.BundleConfig{}, fmt.Errorf("failed to pull bundle config %q: %s", ref, err)
 	}

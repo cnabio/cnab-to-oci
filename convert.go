@@ -15,9 +15,7 @@ import (
 
 const (
 	// CNABVersion is the currently supported CNAB runtime version
-	CNABVersion = "v1.0.0-WD"
-	// BundleConfigMediaType is the media type of a bundle configuration in an OCI registry
-	BundleConfigMediaType = "application/io.docker.cnab.config." + CNABVersion + "+json"
+	CNABVersion           = "v1.0.0-WD"
 	ociIndexSchemaVersion = 1
 
 	// Top level annotations
@@ -39,16 +37,18 @@ const (
 	CNABDescriptorTypeInvocation = "invocation"
 	// CNABDescriptorTypeComponent is the CNABDescriptorTypeAnnotation value for component images
 	CNABDescriptorTypeComponent = "component"
+	// CNABDescriptorTypeConfig is the CNABDescriptorTypeAnnotation value for bundle configuration
+	CNABDescriptorTypeConfig = "config"
 	// CNABDescriptorComponentNameAnnotation is a decriptor-level annotation specifying the component name
 	CNABDescriptorComponentNameAnnotation = "io.cnab.component_name"
 	// CNABDescriptorOriginalNameAnnotation is a decriptor-level annotation specifying the original image name
 	CNABDescriptorOriginalNameAnnotation = "io.cnab.original_name"
 )
 
-// GetBundleConfigDescriptor returns the CNAB runtime config descriptor from a OCI index
-func GetBundleConfigDescriptor(ix *ocischemav1.Index) (ocischemav1.Descriptor, error) {
+// GetBundleConfigManifestDescriptor returns the CNAB runtime config manifest descriptor from a OCI index
+func GetBundleConfigManifestDescriptor(ix *ocischemav1.Index) (ocischemav1.Descriptor, error) {
 	for _, d := range ix.Manifests {
-		if d.MediaType == BundleConfigMediaType {
+		if d.Annotations[CNABDescriptorTypeAnnotation] == CNABDescriptorTypeConfig {
 			return d, nil
 		}
 	}
@@ -57,12 +57,12 @@ func GetBundleConfigDescriptor(ix *ocischemav1.Index) (ocischemav1.Descriptor, e
 
 // ConvertBundleToOCIIndex converts a cnab bundle to an OCI Index representation
 // TODO: details
-func ConvertBundleToOCIIndex(b *bundle.Bundle, targetReference reference.Named, bundleConfigReference ocischemav1.Descriptor) (*ocischemav1.Index, error) {
+func ConvertBundleToOCIIndex(b *bundle.Bundle, targetReference reference.Named, bundleConfigManifestReference ocischemav1.Descriptor) (*ocischemav1.Index, error) {
 	annotations, err := makeAnnotations(b)
 	if err != nil {
 		return nil, err
 	}
-	manifests, err := makeManifests(b, targetReference, bundleConfigReference)
+	manifests, err := makeManifests(b, targetReference, bundleConfigManifestReference)
 	if err != nil {
 		return nil, err
 	}
@@ -123,11 +123,15 @@ func parseTopLevelAnnotations(annotations map[string]string, into *bundle.Bundle
 	return nil
 }
 
-func makeManifests(b *bundle.Bundle, targetReference reference.Named, bundleConfigReference ocischemav1.Descriptor) ([]ocischemav1.Descriptor, error) {
+func makeManifests(b *bundle.Bundle, targetReference reference.Named, bundleConfigManifestReference ocischemav1.Descriptor) ([]ocischemav1.Descriptor, error) {
 	if len(b.InvocationImages) != 1 {
 		return nil, errors.New("only one invocation image supported")
 	}
-	manifests := []ocischemav1.Descriptor{bundleConfigReference}
+	if bundleConfigManifestReference.Annotations == nil {
+		bundleConfigManifestReference.Annotations = map[string]string{}
+	}
+	bundleConfigManifestReference.Annotations[CNABDescriptorTypeAnnotation] = CNABDescriptorTypeConfig
+	manifests := []ocischemav1.Descriptor{bundleConfigManifestReference}
 	invocationImage, err := makeDescriptor(b.InvocationImages[0].BaseImage, targetReference)
 	if err != nil {
 		return nil, fmt.Errorf("invalid invocation image: %s", err)
@@ -155,8 +159,6 @@ func parseManifests(descriptors []ocischemav1.Descriptor, into *bundle.Bundle, o
 	for _, d := range descriptors {
 		var imageType string
 		switch d.MediaType {
-		case BundleConfigMediaType:
-			continue
 		case ocischemav1.MediaTypeImageManifest, ocischemav1.MediaTypeImageIndex:
 			imageType = "oci"
 		case images.MediaTypeDockerSchema2Manifest, images.MediaTypeDockerSchema2ManifestList:
@@ -167,6 +169,9 @@ func parseManifests(descriptors []ocischemav1.Descriptor, into *bundle.Bundle, o
 		descriptorType, ok := d.Annotations[CNABDescriptorTypeAnnotation]
 		if !ok {
 			return fmt.Errorf("manifest descriptor %q has no CNAB descriptor type annotation %q", d.Digest, CNABDescriptorTypeAnnotation)
+		}
+		if descriptorType == CNABDescriptorTypeConfig {
+			continue
 		}
 		// strip tag/digest from originRepo
 		originRepo, err := reference.ParseNormalizedNamed(originRepo.Name())
