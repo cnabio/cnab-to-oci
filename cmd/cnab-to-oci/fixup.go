@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -75,6 +76,10 @@ func runFixup(opts fixupOptions) error {
 	bundleJSON, err = json.MarshalIndent(b, "", "  ")
 	if err != nil {
 		return err
+	}
+	if opts.output == "-" {
+		fmt.Fprintln(os.Stdout, string(bundleJSON))
+		return nil
 	}
 	return ioutil.WriteFile(opts.output, bundleJSON, 0644)
 }

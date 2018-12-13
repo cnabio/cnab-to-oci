@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/containerd/containerd/content"
-	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes"
 	"github.com/docker/cnab-to-oci/test"
 	"github.com/docker/distribution/manifest/schema2"
@@ -167,7 +166,7 @@ func TestPush(t *testing.T) {
 
 	// check pushed bundle manifest index
 	assert.Equal(t, "my.registry/namespace/my-app:my-tag", resolver.pushedReferences[2])
-	assert.Equal(t, images.MediaTypeDockerSchema2ManifestList, pusher.pushedDescriptors[2].MediaType)
+	assert.Equal(t, ocischemav1.MediaTypeImageIndex, pusher.pushedDescriptors[2].MediaType)
 	assert.Equal(t, oneLiner(expectedBundleManifest), pusher.buffers[2].String())
 }
 
