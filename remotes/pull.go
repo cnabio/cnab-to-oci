@@ -52,15 +52,15 @@ func getConfig(ctx context.Context, ref reference.Named, resolver remotes.Resolv
 	// and then the config blob within it
 	configManifestDescriptor, err := oci.GetBundleConfigManifestDescriptor(&index)
 	if err != nil {
-		return oci.BundleConfig{}, fmt.Errorf("failed to get bundle config from %q: %s", ref, err)
+		return oci.BundleConfig{}, fmt.Errorf("failed to get bundle config manifest from %q: %s", ref, err)
 	}
 	repoOnly, err := reference.ParseNormalizedNamed(ref.Name())
 	if err != nil {
-		return oci.BundleConfig{}, fmt.Errorf("invalid bundle config reference name %q: %s", ref, err)
+		return oci.BundleConfig{}, fmt.Errorf("invalid bundle config manifest reference name %q: %s", ref, err)
 	}
 	configManifestRef, err := reference.WithDigest(repoOnly, configManifestDescriptor.Digest)
 	if err != nil {
-		return oci.BundleConfig{}, fmt.Errorf("invalid bundle config reference name %q: %s", ref, err)
+		return oci.BundleConfig{}, fmt.Errorf("invalid bundle config manifest reference name %q: %s", ref, err)
 	}
 
 	configManifestPayload, err := pullPayload(ctx, resolver, configManifestRef.String(), configManifestDescriptor)
@@ -71,7 +71,7 @@ func getConfig(ctx context.Context, ref reference.Named, resolver remotes.Resolv
 	if err := manifest.UnmarshalJSON(configManifestPayload); err != nil {
 		return oci.BundleConfig{}, err
 	}
-
+	// Pull now the config itself
 	configRef, err := reference.WithDigest(repoOnly, manifest.Config.Digest)
 	if err != nil {
 		return oci.BundleConfig{}, fmt.Errorf("invalid bundle config reference name %q: %s", ref, err)

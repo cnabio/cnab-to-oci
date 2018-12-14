@@ -129,5 +129,4 @@ func pushPayload(ctx context.Context, resolver remotes.Resolver, reference strin
 		return nil
 	}
 	return err
-
 }
