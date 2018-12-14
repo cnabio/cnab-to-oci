@@ -1,71 +1,16 @@
 package remotes
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"strings"
 	"testing"
 
-	"github.com/containerd/containerd/content"
-	"github.com/containerd/containerd/remotes"
 	"github.com/docker/cnab-to-oci/test"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/distribution/reference"
-	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"gotest.tools/assert"
 )
-
-// Mock remote.Resolver interface
-type mockResolver struct {
-	pushedReferences []string
-	pusher           *mockPusher
-}
-
-func (r *mockResolver) Resolve(ctx context.Context, ref string) (name string, desc ocischemav1.Descriptor, err error) {
-	return "", ocischemav1.Descriptor{}, nil
-}
-func (r *mockResolver) Fetcher(ctx context.Context, ref string) (remotes.Fetcher, error) {
-	return nil, nil
-}
-func (r *mockResolver) Pusher(ctx context.Context, ref string) (remotes.Pusher, error) {
-	r.pushedReferences = append(r.pushedReferences, ref)
-	return r.pusher, nil
-}
-
-// Mock remotes.Pusher interface
-type mockPusher struct {
-	pushedDescriptors []ocischemav1.Descriptor
-	buffers           []*bytes.Buffer
-}
-
-func (p *mockPusher) Push(ctx context.Context, d ocischemav1.Descriptor) (content.Writer, error) {
-	p.pushedDescriptors = append(p.pushedDescriptors, d)
-	buf := &bytes.Buffer{}
-	p.buffers = append(p.buffers, buf)
-	return &mockWriter{
-		WriteCloser: nopWriteCloser{Buffer: buf},
-	}, nil
-}
-
-// Mock content.Writer interface
-type mockWriter struct {
-	io.WriteCloser
-}
-
-func (w mockWriter) Digest() digest.Digest { return "" }
-func (w mockWriter) Commit(ctx context.Context, size int64, expected digest.Digest, opts ...content.Opt) error {
-	return nil
-}
-func (w mockWriter) Status() (content.Status, error) { return content.Status{}, nil }
-func (w mockWriter) Truncate(size int64) error       { return nil }
-
-type nopWriteCloser struct {
-	*bytes.Buffer
-}
-
-func (n nopWriteCloser) Close() error { return nil }
 
 const (
 	expectedBundleConfig = `{
@@ -99,6 +44,7 @@ const (
     }
   }
 }`
+
 	expectedBundleManifest = `{
   "schemaVersion": 1,
   "manifests": [

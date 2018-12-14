@@ -54,7 +54,7 @@ func MakeTestBundle() *bundle.Bundle {
 		Name: "my-app",
 		Parameters: map[string]bundle.ParameterDefinition{
 			"param1": bundle.ParameterDefinition{
-				AllowedValues: []interface{}{"value1", true, 1},
+				AllowedValues: []interface{}{"value1", true, float64(1)},
 				DataType:      "type",
 				DefaultValue:  "hello",
 				Destination: &bundle.Location{
