@@ -24,6 +24,10 @@ const (
 	DockerAppFormatAnnotation = "io.docker.app.format"
 	// DockerAppFormatCNAB is the DockerAppFormatAnnotation value for CNAB
 	DockerAppFormatCNAB = "cnab"
+	// DockerTypeAnnotion
+	DockerTypeAnnotation = "io.docker.type"
+	// DockerTypeApp
+	DockerTypeApp = "app"
 	// CNABRuntimeVersionAnnotation is the top level annotation specifying the CNAB runtime version
 	CNABRuntimeVersionAnnotation = "io.cnab.runtime_version"
 	// CNABKeywordsAnnotation is the top level annotation specifying a list of keywords
@@ -83,6 +87,7 @@ func makeAnnotations(b *bundle.Bundle) (map[string]string, error) {
 		ocischemav1.AnnotationTitle:       b.Name,
 		ocischemav1.AnnotationVersion:     b.Version,
 		ocischemav1.AnnotationDescription: b.Description,
+		DockerTypeAnnotation:              DockerTypeApp,
 	}
 	if b.Maintainers != nil {
 		maintainers, err := json.Marshal(b.Maintainers)

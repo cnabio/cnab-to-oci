@@ -80,6 +80,7 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 			ocischemav1.AnnotationDescription: "description",
 			ocischemav1.AnnotationAuthors:     `[{"name":"docker","email":"docker@docker.com","url":"docker.com"}]`,
 			"io.cnab.keywords":                `["keyword1","keyword2"]`,
+			"io.docker.type":                  "app",
 		},
 		Manifests: []ocischemav1.Descriptor{
 			ocischemav1.Descriptor{
