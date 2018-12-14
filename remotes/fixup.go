@@ -92,6 +92,7 @@ func fixupBaseImage(ctx context.Context, baseImage *bundle.BaseImage, ref refere
 		err = fmt.Errorf("%q is not a valid image reference for %q", baseImage.Image, ref)
 		return
 	}
+	imageRef = reference.TagNameOnly(imageRef)
 	if _, descriptor, e = resolver.Resolve(ctx, imageRef.String()); e != nil {
 		err = fmt.Errorf("failed to resolve %q: %s", imageRef, err)
 		return
