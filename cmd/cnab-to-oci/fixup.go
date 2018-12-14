@@ -38,21 +38,7 @@ func fixupCmd() *cobra.Command {
 
 func createResolver() docker.ResolverBlobMounter {
 	cfg := config.LoadDefaultConfigFile(os.Stderr)
-	return docker.NewResolver(docker.ResolverOptions{
-		Authorizer: docker.NewAuthorizer(nil, func(hostName string) (string, string, error) {
-			if hostName == registry.DefaultV2Registry.Host {
-				hostName = registry.IndexServer
-			}
-			a, err := cfg.GetAuthConfig(hostName)
-			if err != nil {
-				return "", "", err
-			}
-			if a.IdentityToken != "" {
-				return "", a.IdentityToken, nil
-			}
-			return a.Username, a.Password, nil
-		}),
-	})
+	return remotes.CreateResolver(cfg)
 }
 
 func runFixup(opts fixupOptions) error {
