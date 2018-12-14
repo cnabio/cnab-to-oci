@@ -12,7 +12,6 @@ import (
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
-	"github.com/docker/docker/registry"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +38,7 @@ func fixupCmd() *cobra.Command {
 
 func createResolver() docker.ResolverBlobMounter {
 	cfg := config.LoadDefaultConfigFile(os.Stderr)
-	return remotes.CreateResolver(cfg)
+	return remotes.CreateResolver(cfg, false)
 }
 
 func runFixup(opts fixupOptions) error {
