@@ -136,6 +136,11 @@ func (r *remoteReaderAt) ReadAt(p []byte, off int64) (int, error) {
 	if err == io.EOF && n == len(p) {
 		return n, nil
 	}
+	if err != nil || n == len(p) {
+		return n, err
+	}
+	n2, err := r.ReadAt(p[n:], r.currentOffset)
+	n += n2
 	return n, err
 }
 
