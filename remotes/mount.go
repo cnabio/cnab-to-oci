@@ -36,6 +36,10 @@ type imageCopier struct {
 }
 
 func (h *imageCopier) Handle(ctx context.Context, desc ocischemav1.Descriptor) (err error) {
+	if len(desc.URLs) > 0 {
+		fmt.Fprintf(os.Stderr, "Skipping foreign descriptor %s with media type %s (size: %d)\n", desc.Digest, desc.MediaType, desc.Size)
+		return nil
+	}
 	fmt.Fprintf(os.Stderr, "Copying descriptor %s with media type %s (size: %d)\n", desc.Digest, desc.MediaType, desc.Size)
 	reader, err := h.sourceFetcher.Fetch(ctx, desc)
 	if err != nil {
@@ -85,6 +89,10 @@ func isManifest(mediaType string) bool {
 }
 
 func (h *imageMounter) Handle(ctx context.Context, desc ocischemav1.Descriptor) error {
+	if len(desc.URLs) > 0 {
+		fmt.Fprintf(os.Stderr, "Skipping foreign descriptor %s with media type %s (size: %d)\n", desc.Digest, desc.MediaType, desc.Size)
+		return nil
+	}
 	if isManifest(desc.MediaType) {
 		// manifests are copied
 		return h.imageCopier.Handle(ctx, desc)
