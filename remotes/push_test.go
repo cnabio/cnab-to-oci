@@ -79,6 +79,7 @@ const (
     "io.cnab.keywords": "[\"keyword1\",\"keyword2\"]",
     "io.cnab.runtime_version": "v1.0.0-WD",
     "io.docker.app.format": "cnab",
+    "io.docker.type": "app",
     "org.opencontainers.image.authors": "[{\"name\":\"docker\",\"email\":\"docker@docker.com\",\"url\":\"docker.com\"}]",
     "org.opencontainers.image.description": "description",
     "org.opencontainers.image.title": "my-app",
