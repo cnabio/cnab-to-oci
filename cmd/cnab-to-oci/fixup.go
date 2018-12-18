@@ -24,8 +24,10 @@ type fixupOptions struct {
 func fixupCmd() *cobra.Command {
 	var opts fixupOptions
 	cmd := &cobra.Command{
-		Use:  "fixup <bundle file> [options]",
-		Args: cobra.ExactArgs(1),
+		Use:   "fixup <bundle file> [options]",
+		Short: "Fixes the digest of an image",
+		Long:  "The fixup command resolves all the digest references from a registry and patches the bundle.json with them.",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.input = args[0]
 			return runFixup(opts)

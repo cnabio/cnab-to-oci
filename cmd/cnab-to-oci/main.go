@@ -11,7 +11,7 @@ func main() {
 		Use:          "cnab-to-oci <subcommand> [options]",
 		SilenceUsage: true,
 	}
-	cmd.AddCommand(fixupCmd(), pushCmd(), pullCmd())
+	cmd.AddCommand(fixupCmd(), pushCmd(), pullCmd(), versionCmd())
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
 	}

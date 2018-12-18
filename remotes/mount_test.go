@@ -1,8 +1,9 @@
 package remotes
 
 import (
-	"gotest.tools/assert"
 	"testing"
+
+	"gotest.tools/assert"
 )
 
 type twoStepReader struct {
@@ -28,13 +29,13 @@ func TestRemoteReaderAtShortReads(t *testing.T) {
 		first:  helloWorld[:5],
 		second: helloWorld[5:],
 	}
-	testee := &remoteReaderAt{
+	tested := &remoteReaderAt{
 		ReadCloser: r,
 		size:       int64(len(helloWorld)),
 	}
 
 	actual := make([]byte, len(helloWorld))
-	n, err := testee.ReadAt(actual, 0)
+	n, err := tested.ReadAt(actual, 0)
 	assert.NilError(t, err)
 	assert.Equal(t, n, len(helloWorld))
 	assert.DeepEqual(t, helloWorld, actual)
