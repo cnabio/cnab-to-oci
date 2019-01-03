@@ -1,0 +1,26 @@
+{
+  "name": "helloworld",
+  "version": "0.1.1",
+  "description": "A short description of your bundle",
+  "keywords": [
+    "helloworld",
+    "cnab",
+    "tutorial"
+  ],
+  "maintainers": [
+    {
+      "name": "Jane Doe",
+      "email": "jane.doe@example.com",
+      "url": "https://example.com"
+    }
+  ],
+  "invocationImages": [
+    {
+      "imageType": "docker",
+      "image": "cnab/helloworld:0.1.1"
+    }
+  ],
+  "images": null,
+  "parameters": null,
+  "credentials": null
+}
