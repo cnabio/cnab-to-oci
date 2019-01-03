@@ -9,7 +9,7 @@ import (
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes"
 	"github.com/deislabs/duffle/pkg/bundle"
-	"github.com/docker/cnab-to-oci"
+	"github.com/docker/cnab-to-oci/converter"
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -21,7 +21,7 @@ type ManifestOption func(*ocischemav1.Index) error
 
 // Push pushes a bundle as an OCI Image Index manifest
 func Push(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver, options ...ManifestOption) (ocischemav1.Descriptor, error) {
-	confBlob, confManifest, confBlobDescriptor, confManifestDescriptor, err := oci.CreateBundleConfig(b).PrepareForPush()
+	confBlob, confManifest, confBlobDescriptor, confManifestDescriptor, err := converter.CreateBundleConfig(b).PrepareForPush()
 	if err != nil {
 		return ocischemav1.Descriptor{}, err
 	}
@@ -74,7 +74,7 @@ type ociIndexWrapper struct {
 }
 
 func convertIndexAndApplyOptions(b *bundle.Bundle, ref reference.Named, confDescriptor ocischemav1.Descriptor, options ...ManifestOption) (*ocischemav1.Index, error) {
-	ix, err := oci.ConvertBundleToOCIIndex(b, ref, confDescriptor)
+	ix, err := converter.ConvertBundleToOCIIndex(b, ref, confDescriptor)
 	if err != nil {
 		return nil, err
 	}

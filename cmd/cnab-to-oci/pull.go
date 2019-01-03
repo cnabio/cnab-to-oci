@@ -18,8 +18,9 @@ type pullOptions struct {
 func pullCmd() *cobra.Command {
 	var opts pullOptions
 	cmd := &cobra.Command{
-		Use:  "pull <ref> [options]",
-		Args: cobra.ExactArgs(1),
+		Use:   "pull <ref> [options]",
+		Short: "Pulls an image reference",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.targetRef = args[0]
 			return runPull(opts)

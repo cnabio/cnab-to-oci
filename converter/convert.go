@@ -1,4 +1,4 @@
-package oci
+package converter
 
 import (
 	_ "crypto/sha256" // this ensures we can parse sha256 digests
@@ -13,38 +13,51 @@ import (
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-const (
+const ( // General values
 	// CNABVersion is the currently supported CNAB runtime version
-	CNABVersion           = "v1.0.0-WD"
-	ociIndexSchemaVersion = 1
+	CNABVersion = "v1.0.0-WD"
 
-	// Top level annotations
+	// OCIIndexSchemaVersion is the currently supported OCI index schema's version
+	OCIIndexSchemaVersion = 1
+)
 
+// Type aliases to clarify to which annotation the values belong
+type dockerAppFormatValue = string
+
+type dockerTypeValue = string
+
+type cnabDescriptorTypeValue = string
+
+const ( // Top Level annotations and values
 	// DockerAppFormatAnnotation is the top level annotation specifying the kind of the App Bundle
 	DockerAppFormatAnnotation = "io.docker.app.format"
 	// DockerAppFormatCNAB is the DockerAppFormatAnnotation value for CNAB
-	DockerAppFormatCNAB = "cnab"
-	// DockerTypeAnnotion
+	DockerAppFormatCNAB dockerAppFormatValue = "cnab"
+
+	// DockerTypeAnnotation is the annotation that designates the type of the application
 	DockerTypeAnnotation = "io.docker.type"
-	// DockerTypeApp
-	DockerTypeApp = "app"
+	// DockerTypeApp is the value used to fill DockerTypeAnnotation when targeting a docker-app
+	DockerTypeApp dockerTypeValue = "app"
+
 	// CNABRuntimeVersionAnnotation is the top level annotation specifying the CNAB runtime version
 	CNABRuntimeVersionAnnotation = "io.cnab.runtime_version"
 	// CNABKeywordsAnnotation is the top level annotation specifying a list of keywords
 	CNABKeywordsAnnotation = "io.cnab.keywords"
+)
 
-	// Descriptor level annotations
-
-	// CNABDescriptorTypeAnnotation is a decriptor-level annotation specifying the type of reference image (currently invocation or component)
+const ( // Descriptor level annotations and values
+	// CNABDescriptorTypeAnnotation is a descriptor-level annotation specifying the type of reference image (currently invocation or component)
 	CNABDescriptorTypeAnnotation = "io.cnab.type"
 	// CNABDescriptorTypeInvocation is the CNABDescriptorTypeAnnotation value for invocation images
-	CNABDescriptorTypeInvocation = "invocation"
+	CNABDescriptorTypeInvocation cnabDescriptorTypeValue = "invocation"
 	// CNABDescriptorTypeComponent is the CNABDescriptorTypeAnnotation value for component images
-	CNABDescriptorTypeComponent = "component"
+	CNABDescriptorTypeComponent cnabDescriptorTypeValue = "component"
 	// CNABDescriptorTypeConfig is the CNABDescriptorTypeAnnotation value for bundle configuration
-	CNABDescriptorTypeConfig = "config"
+	CNABDescriptorTypeConfig cnabDescriptorTypeValue = "config"
+
 	// CNABDescriptorComponentNameAnnotation is a decriptor-level annotation specifying the component name
 	CNABDescriptorComponentNameAnnotation = "io.cnab.component_name"
+
 	// CNABDescriptorOriginalNameAnnotation is a decriptor-level annotation specifying the original image name
 	CNABDescriptorOriginalNameAnnotation = "io.cnab.original_name"
 )
@@ -59,25 +72,40 @@ func GetBundleConfigManifestDescriptor(ix *ocischemav1.Index) (ocischemav1.Descr
 	return ocischemav1.Descriptor{}, errors.New("bundle config not found")
 }
 
-// ConvertBundleToOCIIndex converts a cnab bundle to an OCI Index representation
-// TODO: details
-func ConvertBundleToOCIIndex(b *bundle.Bundle, targetReference reference.Named, bundleConfigManifestReference ocischemav1.Descriptor) (*ocischemav1.Index, error) {
+// ConvertBundleToOCIIndex converts a CNAB bundle into an OCI Index representation
+func ConvertBundleToOCIIndex(b *bundle.Bundle, targetRef reference.Named, bundleConfigManifestRef ocischemav1.Descriptor) (*ocischemav1.Index, error) {
 	annotations, err := makeAnnotations(b)
 	if err != nil {
 		return nil, err
 	}
-	manifests, err := makeManifests(b, targetReference, bundleConfigManifestReference)
+	manifests, err := makeManifests(b, targetRef, bundleConfigManifestRef)
 	if err != nil {
 		return nil, err
 	}
 	result := ocischemav1.Index{
 		Versioned: ocischema.Versioned{
-			SchemaVersion: ociIndexSchemaVersion,
+			SchemaVersion: OCIIndexSchemaVersion,
 		},
 		Annotations: annotations,
 		Manifests:   manifests,
 	}
 	return &result, nil
+}
+
+// ConvertOCIIndexToBundle converts an OCI index to a CNAB bundle representation
+func ConvertOCIIndexToBundle(ix *ocischemav1.Index, config *BundleConfig, originRepo reference.Named) (*bundle.Bundle, error) {
+	b := &bundle.Bundle{
+		Actions:     config.Actions,
+		Credentials: config.Credentials,
+		Parameters:  config.Parameters,
+	}
+	if err := parseTopLevelAnnotations(ix.Annotations, b); err != nil {
+		return nil, err
+	}
+	if err := parseManifests(ix.Manifests, b, originRepo); err != nil {
+		return nil, err
+	}
+	return b, nil
 }
 
 func makeAnnotations(b *bundle.Bundle) (map[string]string, error) {
@@ -250,21 +278,4 @@ func makeDescriptor(baseImage bundle.BaseImage, targetReference reference.Named)
 		MediaType: baseImage.MediaType,
 		Size:      int64(baseImage.Size),
 	}, nil
-}
-
-// ConvertOCIIndexToBundle converts an OCI index to a cnab bundle representation
-// TODO: details
-func ConvertOCIIndexToBundle(ix *ocischemav1.Index, config *BundleConfig, originRepo reference.Named) (*bundle.Bundle, error) {
-	b := &bundle.Bundle{
-		Actions:     config.Actions,
-		Credentials: config.Credentials,
-		Parameters:  config.Parameters,
-	}
-	if err := parseTopLevelAnnotations(ix.Annotations, b); err != nil {
-		return nil, err
-	}
-	if err := parseManifests(ix.Manifests, b, originRepo); err != nil {
-		return nil, err
-	}
-	return b, nil
 }

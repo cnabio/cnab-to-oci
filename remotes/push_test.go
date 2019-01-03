@@ -2,10 +2,14 @@ package remotes
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
-	"github.com/docker/cnab-to-oci/test"
+	"github.com/deislabs/duffle/pkg/bundle"
+
+	"github.com/docker/cnab-to-oci/tests"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -59,7 +63,7 @@ const (
     {
       "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
       "digest": "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
-      "size": 250,
+      "size": 506,
       "annotations": {
         "io.cnab.type": "invocation"
       }
@@ -67,7 +71,7 @@ const (
     {
       "mediaType": "application/vnd.oci.image.manifest.v1+json",
       "digest": "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
-      "size": 250,
+      "size": 507,
       "annotations": {
         "io.cnab.component_name": "image-1",
         "io.cnab.original_name": "nginx:2.12",
@@ -91,7 +95,7 @@ const (
 func TestPush(t *testing.T) {
 	pusher := &mockPusher{}
 	resolver := &mockResolver{pusher: pusher}
-	b := test.MakeTestBundle()
+	b := tests.MakeTestBundle()
 	ref, err := reference.ParseNamed("my.registry/namespace/my-app:my-tag")
 	assert.NilError(t, err)
 
@@ -119,4 +123,37 @@ func TestPush(t *testing.T) {
 
 func oneLiner(s string) string {
 	return strings.Replace(strings.Replace(s, " ", "", -1), "\n", "", -1)
+}
+
+func ExamplePush() {
+	resolver := createExampleResolver()
+	b := createExampleBundle()
+	ref, err := reference.ParseNamed("my.registry/namespace/my-app:my-tag")
+	if err != nil {
+		panic(err)
+	}
+
+	// Push the bundle here
+	descriptor, err := Push(context.Background(), b, ref, resolver)
+	if err != nil {
+		panic(err)
+	}
+
+	bytes, err := json.MarshalIndent(descriptor, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%s", string(bytes))
+
+	// Output:
+	// {
+	//   "mediaType": "application/vnd.oci.image.index.v1+json",
+	//   "digest": "sha256:780346d71e4a7ae4375e1b8c2dfced63ed6429d411667c4c0aa30e0a68b75c1e",
+	//   "size": 1121
+	// }
+}
+
+func createExampleBundle() *bundle.Bundle {
+	return tests.MakeTestBundle()
 }

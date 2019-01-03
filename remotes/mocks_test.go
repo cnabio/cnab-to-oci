@@ -8,7 +8,7 @@ import (
 
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/remotes"
-	digest "github.com/opencontainers/go-digest"
+	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -20,15 +20,15 @@ type mockResolver struct {
 	fetcher             *mockFetcher
 }
 
-func (r *mockResolver) Resolve(ctx context.Context, ref string) (name string, desc ocischemav1.Descriptor, err error) {
+func (r *mockResolver) Resolve(_ context.Context, ref string) (string, ocischemav1.Descriptor, error) {
 	descriptor := r.resolvedDescriptors[0]
 	r.resolvedDescriptors = r.resolvedDescriptors[1:]
 	return ref, descriptor, nil
 }
-func (r *mockResolver) Fetcher(ctx context.Context, ref string) (remotes.Fetcher, error) {
+func (r *mockResolver) Fetcher(_ context.Context, ref string) (remotes.Fetcher, error) {
 	return r.fetcher, nil
 }
-func (r *mockResolver) Pusher(ctx context.Context, ref string) (remotes.Pusher, error) {
+func (r *mockResolver) Pusher(_ context.Context, ref string) (remotes.Pusher, error) {
 	r.pushedReferences = append(r.pushedReferences, ref)
 	return r.pusher, nil
 }

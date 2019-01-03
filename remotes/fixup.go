@@ -8,6 +8,7 @@ import (
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/docker/cli/opts"
 	"github.com/docker/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -58,7 +59,7 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, ref reference.N
 	}
 	var handler imageHandler = &copier
 	if reference.Domain(imageRef) == reference.Domain(ref) {
-		mounter, err := newImageMounter(ctx, resolver, copier, sourceFetcher, sourceRepoOnly.Name(), repoOnly.Name())
+		mounter, err := newImageMounter(ctx, resolver, copier, sourceRepoOnly.Name(), repoOnly.Name())
 		if err != nil {
 			return bundle.BaseImage{}, err
 		}
@@ -79,32 +80,38 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, ref reference.N
 	return baseImage, nil
 }
 
-func fixupBaseImage(ctx context.Context, baseImage *bundle.BaseImage, ref reference.Named, resolver docker.ResolverBlobMounter) (repoOnly reference.Named, imageRef reference.Named, descriptor ocischemav1.Descriptor, err error) {
-	var e error
-	if e = checkBaseImage(baseImage); e != nil {
-		err = fmt.Errorf("invalid image %q: %s", ref, e)
-		return
+func fixupBaseImage(ctx context.Context,
+	baseImage *bundle.BaseImage,
+	ref opts.NamedOption,
+	resolver docker.ResolverBlobMounter) (reference.Named, reference.Named, ocischemav1.Descriptor, error) {
+	err := checkBaseImage(baseImage)
+	if err != nil {
+		err := fmt.Errorf("invalid image %q: %s", ref, err)
+		return nil, nil, ocischemav1.Descriptor{}, err
 	}
-	if repoOnly, err = reference.ParseNormalizedNamed(ref.Name()); err != nil {
-		return
+	repoOnly, err := reference.ParseNormalizedNamed(ref.Name())
+	if err != nil {
+		return nil, nil, ocischemav1.Descriptor{}, err
 	}
-	if imageRef, e = reference.ParseNormalizedNamed(baseImage.Image); e != nil {
+	imageRef, err := reference.ParseNormalizedNamed(baseImage.Image)
+	if err != nil {
 		err = fmt.Errorf("%q is not a valid image reference for %q", baseImage.Image, ref)
-		return
+		return nil, nil, ocischemav1.Descriptor{}, err
 	}
 	imageRef = reference.TagNameOnly(imageRef)
-	if _, descriptor, e = resolver.Resolve(ctx, imageRef.String()); e != nil {
+	_, descriptor, err := resolver.Resolve(ctx, imageRef.String())
+	if err != nil {
 		err = fmt.Errorf("failed to resolve %q: %s", imageRef, err)
-		return
+		return nil, nil, ocischemav1.Descriptor{}, err
 	}
-	digested, e := reference.WithDigest(repoOnly, descriptor.Digest)
-	if e != nil {
-		return
+	digested, err := reference.WithDigest(repoOnly, descriptor.Digest)
+	if err != nil {
+		return nil, nil, ocischemav1.Descriptor{}, err
 	}
 	baseImage.Image = reference.FamiliarString(digested)
 	baseImage.MediaType = descriptor.MediaType
 	baseImage.Size = uint64(descriptor.Size)
-	return
+	return repoOnly, imageRef, descriptor, nil
 }
 
 func checkBaseImage(baseImage *bundle.BaseImage) error {

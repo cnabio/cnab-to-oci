@@ -20,8 +20,9 @@ type pushOptions struct {
 func pushCmd() *cobra.Command {
 	var opts pushOptions
 	cmd := &cobra.Command{
-		Use:  "push <bundle file> [options]",
-		Args: cobra.ExactArgs(1),
+		Use:   "push <bundle file> [options]",
+		Short: "Fixes and pushes the bundle to an registry",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.input = args[0]
 			return runPush(opts)

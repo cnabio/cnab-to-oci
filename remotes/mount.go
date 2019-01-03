@@ -61,7 +61,13 @@ func (h *imageCopier) Handle(ctx context.Context, desc ocischemav1.Descriptor) (
 	return err
 }
 
-func newImageMounter(ctx context.Context, resolver docker.ResolverBlobMounter, copier imageCopier, sourceFetcher remotes.Fetcher, sourceRepo, targetRepo string) (imageMounter, error) {
+func newImageMounter(
+	ctx context.Context,
+	resolver docker.ResolverBlobMounter,
+	copier imageCopier,
+	sourceRepo,
+	targetRepo string) (imageMounter, error) {
+
 	destMounter, err := resolver.BlobMounter(ctx, targetRepo)
 	if err != nil {
 		return imageMounter{}, err
@@ -151,9 +157,10 @@ type descriptorAccumulator struct {
 func (a *descriptorAccumulator) Handle(ctx context.Context, desc ocischemav1.Descriptor) ([]ocischemav1.Descriptor, error) {
 	descs := make([]ocischemav1.Descriptor, len(a.descriptors)+1)
 	descs[0] = desc
-	for ix, d := range a.descriptors {
-		descs[ix+1] = d
+	for i, d := range a.descriptors {
+		descs[i+1] = d
 	}
+
 	a.descriptors = descs
 	return nil, nil
 }

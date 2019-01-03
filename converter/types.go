@@ -1,4 +1,4 @@
-package oci
+package converter
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-// BundleConfig discribes a cnab bundle runtime config
+// BundleConfig describes a cnab bundle runtime config
 type BundleConfig struct {
 	SchemaVersion string                                `json:"schema_version" mapstructure:"schema_version"`
 	Actions       map[string]bundle.Action              `json:"actions,omitempty" mapstructure:"actions,omitempty"`
@@ -49,7 +49,9 @@ func (c *BundleConfig) PrepareForPush() (blob []byte, manifest []byte, blobDescr
 	if err != nil {
 		return nil, nil, ocischemav1.Descriptor{}, ocischemav1.Descriptor{}, err
 	}
-	return bytes, manBytes, ocischemav1.Descriptor{
+	return bytes,
+		manBytes,
+		ocischemav1.Descriptor{
 			MediaType: schema2.MediaTypeImageConfig,
 			Size:      int64(len(bytes)),
 			Digest:    digest.FromBytes(bytes),
