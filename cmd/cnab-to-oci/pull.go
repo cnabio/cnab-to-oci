@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
@@ -45,6 +47,9 @@ func runPull(opts pullOptions) error {
 	if err != nil {
 		return err
 	}
-
+	if opts.output == "-" {
+		fmt.Fprintln(os.Stdout, string(bytes))
+		return nil
+	}
 	return ioutil.WriteFile(opts.output, bytes, 0644)
 }
