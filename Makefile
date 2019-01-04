@@ -24,8 +24,7 @@ get-tools:
 	gometalinter --install
 
 # Default build
-build:
-	make bin/cnab-to-oci
+build: bin/cnab-to-oci
 
 bin/%: cmd/% check_go_env
 	$(GO_BUILD) -o $@$(EXEC_EXT) ./$<
