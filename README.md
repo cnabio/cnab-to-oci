@@ -65,6 +65,9 @@ Copying descriptor sha256:a59a4e74d9cc89e4e75dfb2cc7ea5c108e4236ba6231b53081a9e2
 Pushed successfully, with digest "sha256:6cabd752cb01d2efb9485225baf7fc26f4322c1f45f537f76c5eeb67ba8d83e0"
 ```
 
+**Note:** `cnab-to-oci` does not push images from your docker daemon image store.
+Make sure all your invocation images are already present on a registry before pushing your bundle.
+
 **Note:** The `MANIFEST_INVALID` error in the above case is because the Docker Hub
 does not currently support the OCI image index type.
 
