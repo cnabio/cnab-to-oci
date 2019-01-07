@@ -35,8 +35,19 @@ install:
 clean:
 	rm -rf bin
 
-test:
-	go test -failfast ./...
+test: test-unit test-e2e
+
+test-unit:
+	go test -failfast $(shell go list ./... | grep -vE '/e2e')
+
+test-e2e: e2e-image
+	docker run --rm --network=host -v /var/run/docker.sock:/var/run/docker.sock cnab-to-oci-e2e
+
+build-e2e-test:
+	go test -c github.com/docker/cnab-to-oci/e2e
+
+e2e-image:
+	docker build . -t cnab-to-oci-e2e
 
 format: get-tools
 	go fmt ./...
@@ -47,4 +58,4 @@ format: get-tools
 lint: get-tools
 	gometalinter --config=gometalinter.json ./...
 
-.PHONY: all, get-tools, build, clean, test, lint
+.PHONY: all, get-tools, build, clean, test, test-unit, test-e2e, e2e-image, lint
