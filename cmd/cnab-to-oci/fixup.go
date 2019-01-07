@@ -60,7 +60,7 @@ func runFixup(opts fixupOptions) error {
 	if err := remotes.FixupBundle(context.Background(), &b, ref, resolver); err != nil {
 		return err
 	}
-	bundleJSON, err = json.MarshalIndent(b, "", "  ")
+	bundleJSON, err = json.MarshalIndent(b, "", "\t")
 	if err != nil {
 		return err
 	}

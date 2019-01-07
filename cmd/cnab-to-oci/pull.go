@@ -43,7 +43,7 @@ func runPull(opts pullOptions) error {
 	if err != nil {
 		return err
 	}
-	bytes, err := json.MarshalIndent(b, "", " ")
+	bytes, err := json.MarshalIndent(b, "", "\t")
 	if err != nil {
 		return err
 	}
