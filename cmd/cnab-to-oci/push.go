@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -26,6 +27,9 @@ func pushCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.input = args[0]
+			if opts.targetRef == "" {
+				return errors.New("--target flag must be set with a namespace ")
+			}
 			return runPush(opts)
 		},
 	}
