@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -15,6 +16,7 @@ import (
 type pushOptions struct {
 	input     string
 	targetRef string
+	insecure  bool
 }
 
 func pushCmd() *cobra.Command {
@@ -25,11 +27,15 @@ func pushCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.input = args[0]
+			if opts.targetRef == "" {
+				return errors.New("--target flag must be set with a namespace ")
+			}
 			return runPush(opts)
 		},
 	}
 
 	cmd.Flags().StringVarP(&opts.targetRef, "target", "t", "", "reference where the bundle will be pushed")
+	cmd.Flags().BoolVar(&opts.insecure, "insecure", false, "Use insecure registry, without SSL")
 	return cmd
 }
 
@@ -42,7 +48,7 @@ func runPush(opts pushOptions) error {
 	if err := json.Unmarshal(bundleJSON, &b); err != nil {
 		return err
 	}
-	resolver := createResolver()
+	resolver := createResolver(opts.insecure)
 	ref, err := reference.ParseNormalizedNamed(opts.targetRef)
 	if err != nil {
 		return err

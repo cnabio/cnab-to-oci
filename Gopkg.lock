@@ -415,14 +415,18 @@
   version = "v1.17.0"
 
 [[projects]]
-  digest = "1:96dd14a129cdd71b7e354dde14251546ab89523af2999c39db24ef74d4eaabf6"
+  digest = "1:6ce9649d17f65869ca8afe5eac8655a06855a10d8bb18af1d722b52d53a9aaef"
   name = "gotest.tools"
   packages = [
     "assert",
     "assert/cmp",
+    "fs",
+    "golden",
+    "icmd",
     "internal/difflib",
     "internal/format",
     "internal/source",
+    "x/subtest",
   ]
   pruneopts = "UT"
   revision = "7c797b5133e5460410dbb22ba779bf35e6975dea"
@@ -450,6 +454,9 @@
     "github.com/pkg/errors",
     "github.com/spf13/cobra",
     "gotest.tools/assert",
+    "gotest.tools/fs",
+    "gotest.tools/golden",
+    "gotest.tools/icmd",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

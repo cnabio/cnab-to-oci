@@ -42,7 +42,7 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, ref reference.N
 		return baseImage, nil
 	}
 
-	fmt.Fprintf(os.Stderr, "Image is not present in repository\n")
+	fmt.Fprintln(os.Stderr, "Image is not present in repository")
 	sourceRepoOnly, err := reference.ParseNormalizedNamed(imageRef.Name())
 	if err != nil {
 		return bundle.BaseImage{}, err
@@ -101,7 +101,7 @@ func fixupBaseImage(ctx context.Context,
 	imageRef = reference.TagNameOnly(imageRef)
 	_, descriptor, err := resolver.Resolve(ctx, imageRef.String())
 	if err != nil {
-		err = fmt.Errorf("failed to resolve %q: %s", imageRef, err)
+		err = fmt.Errorf("failed to resolve %q, push the image to the registry before pushing the bundle: %s", imageRef, err)
 		return nil, nil, ocischemav1.Descriptor{}, err
 	}
 	digested, err := reference.WithDigest(repoOnly, descriptor.Digest)

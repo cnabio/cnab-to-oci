@@ -15,6 +15,7 @@ import (
 type pullOptions struct {
 	output    string
 	targetRef string
+	insecure  bool
 }
 
 func pullCmd() *cobra.Command {
@@ -30,11 +31,12 @@ func pullCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&opts.output, "output", "o", "pulled.json", "output file")
+	cmd.Flags().BoolVar(&opts.insecure, "insecure", false, "Use insecure registry, without SSL")
 	return cmd
 }
 
 func runPull(opts pullOptions) error {
-	resolver := createResolver()
+	resolver := createResolver(opts.insecure)
 	ref, err := reference.ParseNormalizedNamed(opts.targetRef)
 	if err != nil {
 		return err
@@ -43,7 +45,7 @@ func runPull(opts pullOptions) error {
 	if err != nil {
 		return err
 	}
-	bytes, err := json.MarshalIndent(b, "", " ")
+	bytes, err := json.MarshalIndent(b, "", "\t")
 	if err != nil {
 		return err
 	}
