@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/docker/cnab-to-oci/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -11,7 +12,7 @@ func versionCmd() *cobra.Command {
 		Use:   "version",
 		Short: "Shows the version of cnab-to-oci",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("TODO(ulyssessouza) Implement versioning")
+			fmt.Println(internal.FullVersion())
 			return nil
 		},
 	}

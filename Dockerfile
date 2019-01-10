@@ -8,6 +8,10 @@ ARG DOCKERCLI_VERSION=18.03.1-ce
 ARG DOCKERCLI_CHANNEL=edge
 ARG DOCKER_APP_VERSION=cnab-dockercon-preview
 
+ARG BUILDTIME
+ARG COMMIT
+ARG TAG
+
 RUN apk add --no-cache \
   bash \
   make \
@@ -26,13 +30,13 @@ RUN git clone https://github.com/docker/app
 
 WORKDIR /go/src/github.com/docker/cnab-to-oci
 COPY . .
-RUN make bin/cnab-to-oci &&\
-    make build-e2e-test
+RUN make BUILDTIME=$BUILDTIME COMMIT=$COMMIT TAG=$TAG bin/cnab-to-oci &&\
+    make BUILDTIME=$BUILDTIME COMMIT=$COMMIT TAG=$TAG build-e2e-test
 
 # e2e image
 FROM alpine:${ALPINE_VERSION} as e2e
 
-# copy all the elements needed for e2e tests from build image 
+# copy all the elements needed for e2e tests from build image
 COPY --from=build /go/docker/docker /usr/bin/docker
 COPY --from=build /go/docker-app-linux /usr/bin/docker-app
 COPY --from=build /go/app/examples /examples
