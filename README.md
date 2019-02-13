@@ -172,22 +172,23 @@ The following is an example of an OCI image index sent to the registry.
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.index.v1+json",
   "manifests": [
     {
-      "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
       "digest": "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
-      "size": 315,
+      "size": 285,
       "annotations": {
-        "io.cnab.type": "config"
+        "io.cnab.manifest.type": "config"
       }
     },
     {
-      "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
       "digest": "sha256:196d12cf6ab19273823e700516e98eb1910b03b17840f9d5509f03858484d321",
       "size": 506,
       "annotations": {
-        "io.cnab.type": "invocation"
+        "io.cnab.manifest.type": "invocation"
       }
     },
     {
@@ -195,9 +196,9 @@ The following is an example of an OCI image index sent to the registry.
       "digest": "sha256:6bb891430fb6e2d3b4db41fd1f7ece08c5fc769d8f4823ec33c7c7ba99679213",
       "size": 507,
       "annotations": {
-        "io.cnab.component_name": "image-1",
-        "io.cnab.original_name": "nginx:2.12",
-        "io.cnab.type": "component"
+        "io.cnab.component.name": "image-1",
+        "io.cnab.component.original_name": "nginx:2.12",
+        "io.cnab.manifest.type": "component"
       }
     }
   ],
@@ -206,6 +207,7 @@ The following is an example of an OCI image index sent to the registry.
     "io.cnab.runtime_version": "v1.0.0-WD",
     "io.docker.app.format": "cnab",
     "io.docker.type": "app",
+    "org.opencontainers.artifactType": "cnab",
     "org.opencontainers.image.authors": "[{\"name\":\"docker\",\"email\":\"docker@docker.com\",\"url\":\"docker.com\"}]",
     "org.opencontainers.image.description": "description",
     "org.opencontainers.image.title": "my-app",
@@ -213,6 +215,28 @@ The following is an example of an OCI image index sent to the registry.
   }
 }
 ```
+
+The first manifest in the manifest list references the CNAB configuration. An
+example of this follows:
+
+```json
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+  "config": {
+    "mediaType": "application/vnd.oci.cnab.config.v1+json",
+    "digest": "sha256:4bc453b53cb3d914b45f4b250294236adba2c0e09ff6f03793949e7e39fd4cc1",
+    "size": 578
+  },
+  "layers": []
+}
+```
+
+Subsequent manifests in the manifest list are standard OCI images.
+
+This example proposes two OCI specification and registry changes:
+1. It proposes the addition of an `org.opencontainers.artifactType` annotation to be included in the OCI specification.
+1. It requires that registries support the `application/vnd.oci.cnab.config.v1+json` media type for a config type.
 
 ## Development
 
