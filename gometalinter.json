@@ -17,7 +17,6 @@
     "gofmt",
     "goimports",
     "golint",
-    "gosimple",
     "ineffassign",
     "interfacer",
     "lll",
@@ -25,7 +24,6 @@
     "nakedret",
     "unconvert",
     "unparam",
-    "unused",
     "vet"
   ],
   "Cyclo": 16,
