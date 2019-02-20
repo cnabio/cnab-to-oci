@@ -21,7 +21,7 @@ const (
   "schema_version": "v1.0.0-WD",
   "actions": {
     "action-1": {
-      "Modifies": true
+      "modifies": true
     }
   },
   "parameters": {
@@ -54,7 +54,7 @@ const (
   "manifests": [
     {
       "mediaType":"application/vnd.docker.distribution.manifest.v2+json",
-      "digest":"sha256:f4807c40c28978674e881cb7808fa88d648b1cd19832a78238fc9e7d17443c03",
+      "digest":"sha256:1b19eb80fc8e5c84ff912d75c228d968b30a6b7553ea44de94acc1958e320268",
       "size":315,
       "annotations":{
         "io.cnab.type":"config"
@@ -149,7 +149,7 @@ func ExamplePush() {
 	// Output:
 	// {
 	//   "mediaType": "application/vnd.oci.image.index.v1+json",
-	//   "digest": "sha256:780346d71e4a7ae4375e1b8c2dfced63ed6429d411667c4c0aa30e0a68b75c1e",
+	//   "digest": "sha256:0bdc6f9c71c3f429203cdf63c87d23f27dd3e08e310df306f208c71b45fac05f",
 	//   "size": 1121
 	// }
 }

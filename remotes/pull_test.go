@@ -102,6 +102,7 @@ func ExamplePull() {
 	//             "imageType": "docker",
 	//             "image": "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
 	//             "size": 506,
+	//             "platform": {},
 	//             "mediaType": "application/vnd.docker.distribution.manifest.v2+json"
 	//         }
 	//     ],
@@ -110,13 +111,15 @@ func ExamplePull() {
 	//             "imageType": "oci",
 	//             "image": "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
 	//             "size": 507,
+	//             "platform": {},
 	//             "mediaType": "application/vnd.oci.image.manifest.v1+json",
-	//             "description": "nginx:2.12"
+	//             "description": "nginx:2.12",
+	//             "refs": null
 	//         }
 	//     },
 	//     "actions": {
 	//         "action-1": {
-	//             "Modifies": true
+	//             "modifies": true
 	//         }
 	//     },
 	//     "parameters": {
@@ -203,7 +206,7 @@ const (
   "schema_version": "v1.0.0-WD",
   "actions": {
     "action-1": {
-      "Modifies": true
+      "modifies": true
     }
   },
   "parameters": {
