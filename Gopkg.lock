@@ -63,16 +63,15 @@
   revision = "004b46473808b3e7a4a3049c20e4376c91eb966d"
 
 [[projects]]
-  branch = "image-mapping"
-  digest = "1:740242317618ff600b7b23a4c910d2e4e60ee1b60b76ad91931136b55ca56bc8"
+  branch = "master"
+  digest = "1:f986e081394e51dd9148b3c04a28c7eb31665cac24965609954696b45f09171d"
   name = "github.com/deislabs/duffle"
   packages = ["pkg/bundle"]
   pruneopts = "UT"
-  revision = "59ddb40d7df5b5e69d8035ed7796f4be8e803a31"
-  source = "github.com/simonferquel/duffle"
+  revision = "a67fb624321f98e3b521f3179ed3015963e95ba2"
 
 [[projects]]
-  digest = "1:1ae6152840bd4fe1009e4ce51d8cd989b452ad2e8aaf3bfa3b3ae55974fed729"
+  digest = "1:982e3778851f5bb802c164c0baffa67eb7447b189211a08dd18acaa03b4d30c0"
   name = "github.com/docker/cli"
   packages = [
     "cli/config",
@@ -81,8 +80,7 @@
     "opts",
   ]
   pruneopts = "UT"
-  revision = "51668a30f26250ccfce31bcc13d9334eaafabe36"
-  version = "v18.09.0"
+  revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
 
 [[projects]]
   digest = "1:a3fb9b04b18e11842fdcb83fe3cdadebeee5adeee321f1048d61593345439491"
@@ -415,7 +413,7 @@
   version = "v1.17.0"
 
 [[projects]]
-  digest = "1:6ce9649d17f65869ca8afe5eac8655a06855a10d8bb18af1d722b52d53a9aaef"
+  digest = "1:c0f5da1ae77cad127eeb1043cc4eb62f64cd094d5f788a3858d6e19b6e1de841"
   name = "gotest.tools"
   packages = [
     "assert",
@@ -444,9 +442,11 @@
     "github.com/deislabs/duffle/pkg/bundle",
     "github.com/docker/cli/cli/config",
     "github.com/docker/cli/cli/config/configfile",
+    "github.com/docker/cli/opts",
     "github.com/docker/distribution",
     "github.com/docker/distribution/manifest/schema2",
     "github.com/docker/distribution/reference",
+    "github.com/docker/distribution/registry/client/auth",
     "github.com/docker/docker/registry",
     "github.com/opencontainers/go-digest",
     "github.com/opencontainers/image-spec/specs-go",
