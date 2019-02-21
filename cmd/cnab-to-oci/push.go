@@ -14,9 +14,9 @@ import (
 )
 
 type pushOptions struct {
-	input     string
-	targetRef string
-	insecure  bool
+	input              string
+	targetRef          string
+	insecureRegistries []string
 }
 
 func pushCmd() *cobra.Command {
@@ -35,7 +35,7 @@ func pushCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&opts.targetRef, "target", "t", "", "reference where the bundle will be pushed")
-	cmd.Flags().BoolVar(&opts.insecure, "insecure", false, "Use insecure registry, without SSL")
+	cmd.Flags().StringSliceVar(&opts.insecureRegistries, "insecure-registries", nil, "Use plain HTTP for those registries")
 	return cmd
 }
 
@@ -48,7 +48,7 @@ func runPush(opts pushOptions) error {
 	if err := json.Unmarshal(bundleJSON, &b); err != nil {
 		return err
 	}
-	resolver := createResolver(opts.insecure)
+	resolver := createResolver(opts.insecureRegistries)
 	ref, err := reference.ParseNormalizedNamed(opts.targetRef)
 	if err != nil {
 		return err

@@ -13,9 +13,9 @@ import (
 )
 
 type pullOptions struct {
-	output    string
-	targetRef string
-	insecure  bool
+	output             string
+	targetRef          string
+	insecureRegistries []string
 }
 
 func pullCmd() *cobra.Command {
@@ -31,12 +31,12 @@ func pullCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&opts.output, "output", "o", "pulled.json", "output file")
-	cmd.Flags().BoolVar(&opts.insecure, "insecure", false, "Use insecure registry, without SSL")
+	cmd.Flags().StringSliceVar(&opts.insecureRegistries, "insecure-registries", nil, "Use plain HTTP for those registries")
 	return cmd
 }
 
 func runPull(opts pullOptions) error {
-	resolver := createResolver(opts.insecure)
+	resolver := createResolver(opts.insecureRegistries)
 	ref, err := reference.ParseNormalizedNamed(opts.targetRef)
 	if err != nil {
 		return err
