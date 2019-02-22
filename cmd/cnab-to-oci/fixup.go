@@ -16,10 +16,10 @@ import (
 )
 
 type fixupOptions struct {
-	input     string
-	output    string
-	targetRef string
-	insecure  bool
+	input              string
+	output             string
+	targetRef          string
+	insecureRegistries []string
 }
 
 func fixupCmd() *cobra.Command {
@@ -36,13 +36,13 @@ func fixupCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&opts.output, "output", "o", "fixed-bundle.json", "specify the output file")
 	cmd.Flags().StringVarP(&opts.targetRef, "target", "t", "", "reference where the bundle will be pushed")
-	cmd.Flags().BoolVar(&opts.insecure, "insecure", false, "Use insecure registry, without SSL")
+	cmd.Flags().StringSliceVar(&opts.insecureRegistries, "insecure-registries", nil, "Use plain HTTP for those registries")
 	return cmd
 }
 
-func createResolver(plainHTTP bool) docker.ResolverBlobMounter {
+func createResolver(insecureRegistries []string) docker.ResolverBlobMounter {
 	cfg := config.LoadDefaultConfigFile(os.Stderr)
-	return remotes.CreateResolver(cfg, plainHTTP)
+	return remotes.CreateResolver(cfg, insecureRegistries...)
 }
 
 func runFixup(opts fixupOptions) error {
@@ -54,7 +54,7 @@ func runFixup(opts fixupOptions) error {
 	if err := json.Unmarshal(bundleJSON, &b); err != nil {
 		return err
 	}
-	resolver := createResolver(opts.insecure)
+	resolver := createResolver(opts.insecureRegistries)
 	ref, err := reference.ParseNormalizedNamed(opts.targetRef)
 	if err != nil {
 		return err

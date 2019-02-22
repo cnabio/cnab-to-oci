@@ -32,20 +32,20 @@ func TestPushAndPullCNAB(t *testing.T) {
 	// Save the fixed bundle
 	runCmd(t, icmd.Command("cnab-to-oci", "fixup", dir.Join("bundle.json"),
 		"--target", registry+"/myuser",
-		"--insecure",
+		"--insecure-registries", registry,
 		"--output", dir.Join("fixed-bundle.json")))
 
 	// Push the CNAB to the registry and get the digest
 	out := runCmd(t, icmd.Command("cnab-to-oci", "push", dir.Join("bundle.json"),
 		"--target", registry+"/myuser",
-		"--insecure"))
+		"--insecure-registries", registry))
 	re := regexp.MustCompile(`"(.*)"`)
 	digest := re.FindAllStringSubmatch(out, -1)[0][1]
 
 	// Pull the CNAB from the registry
 	runCmd(t, icmd.Command("cnab-to-oci", "pull", registry+"/myuser@"+digest,
 		"--output", dir.Join("pulled-bundle.json"),
-		"--insecure"))
+		"--insecure-registries", registry))
 	pulledBundle, err := ioutil.ReadFile(dir.Join("pulled-bundle.json"))
 	assert.NilError(t, err)
 
