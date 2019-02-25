@@ -151,16 +151,19 @@ func (r *remoteReaderAt) ReadAt(p []byte, off int64) (int, error) {
 }
 
 type descriptorAccumulator struct {
-	descriptors []ocischemav1.Descriptor
+	descriptors     []ocischemav1.Descriptor
+	childrenHandler images.HandlerFunc
+	resolver        docker.ResolverBlobMounter
+	targetRepo      string
 }
 
 func (a *descriptorAccumulator) Handle(ctx context.Context, desc ocischemav1.Descriptor) ([]ocischemav1.Descriptor, error) {
-	descs := make([]ocischemav1.Descriptor, len(a.descriptors)+1)
-	descs[0] = desc
-	for i, d := range a.descriptors {
-		descs[i+1] = d
+	_, _, err := a.resolver.Resolve(ctx, fmt.Sprintf("%s@%s", a.targetRepo, desc.Digest))
+	if err == nil {
+		fmt.Fprintf(os.Stderr, "Ignoring descriptor %s, as it is already present in target repository\n", desc.Digest)
+		// already exists, do not process
+		return nil, nil
 	}
-
-	a.descriptors = descs
-	return nil, nil
+	a.descriptors = append([]ocischemav1.Descriptor{desc}, a.descriptors...)
+	return a.childrenHandler.Handle(ctx, desc)
 }

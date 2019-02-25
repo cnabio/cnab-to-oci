@@ -35,6 +35,12 @@ func TestPushAndPullCNAB(t *testing.T) {
 		"--insecure-registries", registry,
 		"--output", dir.Join("fixed-bundle.json")))
 
+	// Re fix-up, checking it works twice
+	runCmd(t, icmd.Command("cnab-to-oci", "fixup", dir.Join("bundle.json"),
+		"--target", registry+"/myuser",
+		"--insecure-registries", registry,
+		"--output", dir.Join("fixed-bundle.json")))
+
 	// Push the CNAB to the registry and get the digest
 	out := runCmd(t, icmd.Command("cnab-to-oci", "push", dir.Join("bundle.json"),
 		"--target", registry+"/myuser",

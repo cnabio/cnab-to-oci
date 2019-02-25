@@ -67,8 +67,12 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, ref reference.N
 	}
 
 	// Walk the source repository and list all the descriptors
-	accumulator := &descriptorAccumulator{}
-	if err := images.Walk(ctx, images.Handlers(accumulator, images.ChildrenHandler(&imageContentProvider{sourceFetcher})), descriptor); err != nil {
+	accumulator := &descriptorAccumulator{
+		childrenHandler: images.ChildrenHandler(&imageContentProvider{sourceFetcher}),
+		resolver:        resolver,
+		targetRepo:      repoOnly.String(),
+	}
+	if err := images.Walk(ctx, accumulator, descriptor); err != nil {
 		return bundle.BaseImage{}, err
 	}
 	for _, d := range accumulator.descriptors {
