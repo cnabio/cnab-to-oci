@@ -184,8 +184,11 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 		targetRepo:       repoOnly.String(),
 	}
 	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	scheduler := newErrgroupScheduler(ctx, cfg.maxConcurrentJobs, cfg.jobsBufferLength)
+	defer func() {
+		cancel()
+		scheduler.drain()
+	}()
 	walker := newManifestWalker(notifyEvent, scheduler, progress, descriptorContentHandler)
 	walkerDep := walker.walk(scheduler.ctx(), descriptor, nil)
 	if err = walkerDep.wait(); err != nil {

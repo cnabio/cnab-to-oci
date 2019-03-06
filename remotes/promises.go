@@ -211,3 +211,8 @@ func (s *errgroupScheduler) schedule(do func(ctx context.Context) error) promise
 func (s *errgroupScheduler) ctx() context.Context {
 	return s.context
 }
+
+// nolint: unparam
+func (s *errgroupScheduler) drain() error {
+	return s.workGroup.Wait()
+}
