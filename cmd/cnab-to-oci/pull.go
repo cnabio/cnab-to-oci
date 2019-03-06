@@ -36,12 +36,11 @@ func pullCmd() *cobra.Command {
 }
 
 func runPull(opts pullOptions) error {
-	resolver := createResolver(opts.insecureRegistries)
 	ref, err := reference.ParseNormalizedNamed(opts.targetRef)
 	if err != nil {
 		return err
 	}
-	b, err := remotes.Pull(context.Background(), ref, resolver)
+	b, err := remotes.Pull(context.Background(), ref, createResolver(opts.insecureRegistries).Resolver)
 	if err != nil {
 		return err
 	}

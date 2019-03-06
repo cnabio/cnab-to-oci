@@ -38,6 +38,7 @@ BUILD_ARGS := \
 
 GO_BUILD := CGO_ENABLED=0 go build -ldflags=$(LDFLAGS)
 GO_TEST := CGO_ENABLED=0 go test -ldflags=$(LDFLAGS) -failfast
+GO_TEST_RACE := go test -ldflags=$(LDFLAGS) -failfast -race
 
 all: build test
 
@@ -67,7 +68,7 @@ clean:
 test: test-unit test-e2e
 
 test-unit:
-	$(GO_TEST) $(shell go list ./... | grep -vE '/e2e')
+	$(GO_TEST_RACE) $(shell go list ./... | grep -vE '/e2e')
 
 test-e2e: e2e-image
 	docker run --rm --network=host -v /var/run/docker.sock:/var/run/docker.sock cnab-to-oci-e2e

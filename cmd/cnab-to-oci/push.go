@@ -48,15 +48,17 @@ func runPush(opts pushOptions) error {
 	if err := json.Unmarshal(bundleJSON, &b); err != nil {
 		return err
 	}
-	resolver := createResolver(opts.insecureRegistries)
+	resolverConfig := createResolver(opts.insecureRegistries)
 	ref, err := reference.ParseNormalizedNamed(opts.targetRef)
 	if err != nil {
 		return err
 	}
-	if err := remotes.FixupBundle(context.Background(), &b, ref, resolver); err != nil {
+
+	err = remotes.FixupBundle(context.Background(), &b, ref, resolverConfig, remotes.WithEventCallback(displayEvent))
+	if err != nil {
 		return err
 	}
-	d, err := remotes.Push(context.Background(), &b, ref, resolver)
+	d, err := remotes.Push(context.Background(), &b, ref, resolverConfig.Resolver)
 	if err != nil {
 		return err
 	}

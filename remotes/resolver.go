@@ -3,6 +3,7 @@ package remotes
 import (
 	"context"
 
+	containerdreference "github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/docker/cli/cli/config/configfile"
@@ -12,12 +13,12 @@ import (
 )
 
 type multiRegistryResolver struct {
-	plainHTTP           docker.ResolverBlobMounter
-	secure              docker.ResolverBlobMounter
+	plainHTTP           remotes.Resolver
+	secure              remotes.Resolver
 	plainHTTPRegistries map[string]struct{}
 }
 
-func (r *multiRegistryResolver) resolveImplementation(image string) (docker.ResolverBlobMounter, error) {
+func (r *multiRegistryResolver) resolveImplementation(image string) (remotes.Resolver, error) {
 	ref, err := reference.ParseNormalizedNamed(image)
 	if err != nil {
 		return nil, err
@@ -30,14 +31,6 @@ func (r *multiRegistryResolver) resolveImplementation(image string) (docker.Reso
 		return r.plainHTTP, nil
 	}
 	return r.secure, nil
-}
-
-func (r *multiRegistryResolver) BlobMounter(ctx context.Context, ref string) (docker.BlobMounter, error) {
-	impl, err := r.resolveImplementation(ref)
-	if err != nil {
-		return nil, err
-	}
-	return impl.BlobMounter(ctx, ref)
 }
 
 func (r *multiRegistryResolver) Resolve(ctx context.Context, ref string) (name string, desc ocispec.Descriptor, err error) {
@@ -65,7 +58,7 @@ func (r *multiRegistryResolver) Pusher(ctx context.Context, ref string) (remotes
 }
 
 // CreateResolver creates a docker registry resolver, using the local docker CLI credentials
-func CreateResolver(cfg *configfile.ConfigFile, plainHTTPRegistries ...string) docker.ResolverBlobMounter {
+func CreateResolver(cfg *configfile.ConfigFile, plainHTTPRegistries ...string) (remotes.Resolver, OriginProviderWrapper) {
 	authorizer := docker.NewAuthorizer(nil, func(hostName string) (string, string, error) {
 		if hostName == registry.DefaultV2Registry.Host {
 			hostName = registry.IndexServer
@@ -80,14 +73,18 @@ func CreateResolver(cfg *configfile.ConfigFile, plainHTTPRegistries ...string) d
 		return a.Username, a.Password, nil
 	})
 
+	originProvider := &originProviderWrapper{}
+
 	result := &multiRegistryResolver{
 		plainHTTP: docker.NewResolver(docker.ResolverOptions{
-			Authorizer: authorizer,
-			PlainHTTP:  true,
+			Authorizer:     authorizer,
+			PlainHTTP:      true,
+			OriginProvider: originProvider.resolveSource,
 		}),
 		secure: docker.NewResolver(docker.ResolverOptions{
-			Authorizer: authorizer,
-			PlainHTTP:  false,
+			Authorizer:     authorizer,
+			PlainHTTP:      false,
+			OriginProvider: originProvider.resolveSource,
 		}),
 		plainHTTPRegistries: make(map[string]struct{}),
 	}
@@ -96,5 +93,39 @@ func CreateResolver(cfg *configfile.ConfigFile, plainHTTPRegistries ...string) d
 		result.plainHTTPRegistries[r] = struct{}{}
 	}
 
-	return result
+	return result, originProvider
+}
+
+// OriginProviderWrapper wraps an origin provider, to be able to change the origin provider implementation
+// after having created the resolver
+type OriginProviderWrapper interface {
+	Wrap(func(ocispec.Descriptor) []containerdreference.Spec)
+}
+
+type originProviderWrapper struct {
+	originProvider func(ocispec.Descriptor) []containerdreference.Spec
+}
+
+func (p *originProviderWrapper) resolveSource(desc ocispec.Descriptor) []containerdreference.Spec {
+	if p.originProvider == nil {
+		return nil
+	}
+	return p.originProvider(desc)
+}
+
+func (p *originProviderWrapper) Wrap(provider func(ocispec.Descriptor) []containerdreference.Spec) {
+	p.originProvider = provider
+}
+
+// nolint: interfacer
+func setFromImageReference(wrapper OriginProviderWrapper, named reference.Named) error {
+	spec, err := containerdreference.Parse(named.Name())
+	if err != nil {
+		return err
+	}
+	origins := []containerdreference.Spec{spec}
+	wrapper.Wrap(func(_ ocispec.Descriptor) []containerdreference.Spec {
+		return origins
+	})
+	return nil
 }

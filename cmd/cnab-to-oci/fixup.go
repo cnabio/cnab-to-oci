@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/containerd/containerd/remotes/docker"
 	"github.com/deislabs/duffle/pkg/bundle"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cnab-to-oci/remotes"
@@ -40,11 +39,6 @@ func fixupCmd() *cobra.Command {
 	return cmd
 }
 
-func createResolver(insecureRegistries []string) docker.ResolverBlobMounter {
-	cfg := config.LoadDefaultConfigFile(os.Stderr)
-	return remotes.CreateResolver(cfg, insecureRegistries...)
-}
-
 func runFixup(opts fixupOptions) error {
 	var b bundle.Bundle
 	bundleJSON, err := ioutil.ReadFile(opts.input)
@@ -54,12 +48,12 @@ func runFixup(opts fixupOptions) error {
 	if err := json.Unmarshal(bundleJSON, &b); err != nil {
 		return err
 	}
-	resolver := createResolver(opts.insecureRegistries)
 	ref, err := reference.ParseNormalizedNamed(opts.targetRef)
 	if err != nil {
 		return err
 	}
-	if err := remotes.FixupBundle(context.Background(), &b, ref, resolver); err != nil {
+	err = remotes.FixupBundle(context.Background(), &b, ref, createResolver(opts.insecureRegistries), remotes.WithEventCallback(displayEvent))
+	if err != nil {
 		return err
 	}
 	bundleJSON, err = json.MarshalIndent(b, "", "\t")
@@ -71,4 +65,21 @@ func runFixup(opts fixupOptions) error {
 		return nil
 	}
 	return ioutil.WriteFile(opts.output, bundleJSON, 0644)
+}
+
+func displayEvent(ev remotes.FixupEvent) {
+	switch ev.EventType {
+	case remotes.FixupEventTypeCopyImageStart:
+		fmt.Fprintf(os.Stderr, "Starting to copy image %s...\n", ev.SourceImage)
+	case remotes.FixupEventTypeCopyImageEnd:
+		if ev.Error != nil {
+			fmt.Fprintf(os.Stderr, "Failed to copy image %s: %s\n", ev.SourceImage, ev.Error)
+		} else {
+			fmt.Fprintf(os.Stderr, "Completed image %s copy\n", ev.SourceImage)
+		}
+	}
+}
+
+func createResolver(insecureRegistries []string) remotes.ResolverConfig {
+	return remotes.NewResolverConfigFromDockerConfigFile(config.LoadDefaultConfigFile(os.Stderr), insecureRegistries...)
 }
