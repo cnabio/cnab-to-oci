@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -199,7 +200,11 @@ func (a *dockerAuthorizer) fetchTokenWithOAuth(ctx context.Context, to tokenOpti
 		form.Set("password", to.secret)
 	}
 
-	resp, err := ctxhttp.PostForm(ctx, a.client, to.realm, form)
+	resp, err := ctxhttp.Post(
+		ctx, a.client, to.realm,
+		"application/x-www-form-urlencoded; charset=utf-8",
+		strings.NewReader(form.Encode()),
+	)
 	if err != nil {
 		return "", err
 	}

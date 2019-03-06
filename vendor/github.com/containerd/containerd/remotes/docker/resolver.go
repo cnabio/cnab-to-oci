@@ -37,19 +37,6 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-// ResolverBlobMounter extends remotes.Resolver with support for cross repository blob mounts
-type ResolverBlobMounter interface {
-	remotes.Resolver
-	BlobMounter(ctx context.Context, ref string) (BlobMounter, error)
-}
-
-// BlobMounter mounts content from another repository
-type BlobMounter interface {
-	// MountBlob mounts a blob from another repository
-	// from must be a manifest path (namespace/repo, without the registry prefix)
-	MountBlob(ctx context.Context, d ocispec.Descriptor, from string) error
-}
-
 var (
 	// ErrNoToken is returned if a request is successful but the body does not
 	// contain an authorization token.
@@ -109,6 +96,11 @@ type ResolverOptions struct {
 	// since the registry does not have upload tracking and the existing
 	// mechanism for getting blob upload status is expensive.
 	Tracker StatusTracker
+
+	// OriginProvider returns a slice of refspecs where the Pusher may find candidates for mounting
+	// instead of pushing from local store.
+	// When the Pusher succeeds by mounting, it returns an AlreadyExists error
+	OriginProvider func(ocispec.Descriptor) []reference.Spec
 }
 
 // DefaultHost is the default host function.
@@ -120,16 +112,17 @@ func DefaultHost(ns string) (string, error) {
 }
 
 type dockerResolver struct {
-	auth      Authorizer
-	host      func(string) (string, error)
-	headers   http.Header
-	plainHTTP bool
-	client    *http.Client
-	tracker   StatusTracker
+	auth           Authorizer
+	host           func(string) (string, error)
+	headers        http.Header
+	plainHTTP      bool
+	client         *http.Client
+	tracker        StatusTracker
+	originProvider func(ocispec.Descriptor) []reference.Spec
 }
 
 // NewResolver returns a new resolver to a Docker registry
-func NewResolver(options ResolverOptions) ResolverBlobMounter {
+func NewResolver(options ResolverOptions) remotes.Resolver {
 	if options.Tracker == nil {
 		options.Tracker = NewInMemoryTracker()
 	}
@@ -153,13 +146,17 @@ func NewResolver(options ResolverOptions) ResolverBlobMounter {
 	if options.Authorizer == nil {
 		options.Authorizer = NewAuthorizer(options.Client, options.Credentials)
 	}
+	if options.OriginProvider == nil {
+		options.OriginProvider = func(_ ocispec.Descriptor) []reference.Spec { return nil }
+	}
 	return &dockerResolver{
-		auth:      options.Authorizer,
-		host:      options.Host,
-		headers:   options.Headers,
-		plainHTTP: options.PlainHTTP,
-		client:    options.Client,
-		tracker:   options.Tracker,
+		auth:           options.Authorizer,
+		host:           options.Host,
+		headers:        options.Headers,
+		plainHTTP:      options.PlainHTTP,
+		client:         options.Client,
+		tracker:        options.Tracker,
+		originProvider: options.OriginProvider,
 	}
 }
 
@@ -205,7 +202,7 @@ func (r *dockerResolver) Resolve(ctx context.Context, ref string) (string, ocisp
 		urls = append(urls, fetcher.url("manifests", refspec.Object))
 	}
 
-	ctx, err = contextWithRepositoryScope(ctx, refspec, false)
+	ctx, err = contextWithRepositoryScope(ctx, refspec, false, false)
 	if err != nil {
 		return "", ocispec.Descriptor{}, err
 	}
@@ -312,33 +309,10 @@ func (r *dockerResolver) Pusher(ctx context.Context, ref string) (remotes.Pusher
 	}
 
 	return dockerPusher{
-		dockerBase: base,
-		tag:        refspec.Object,
-		tracker:    r.tracker,
-	}, nil
-}
-
-func (r *dockerResolver) BlobMounter(ctx context.Context, ref string) (BlobMounter, error) {
-	refspec, err := reference.Parse(ref)
-	if err != nil {
-		return nil, err
-	}
-
-	// The passed in for a blob mounter cannot take a digest without the associated content.
-
-	if refspec.Object != "" && strings.Contains(refspec.Object, "@") {
-		return nil, errors.New("cannot use digest reference for push locator")
-	}
-
-	base, err := r.base(refspec)
-	if err != nil {
-		return nil, err
-	}
-
-	return dockerPusher{
-		dockerBase: base,
-		tag:        refspec.Object,
-		tracker:    r.tracker,
+		dockerBase:     base,
+		tag:            refspec.Object,
+		tracker:        r.tracker,
+		originProvider: r.originProvider,
 	}, nil
 }
 
