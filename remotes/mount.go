@@ -4,86 +4,77 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
+	"strings"
 
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes"
-	"github.com/containerd/containerd/remotes/docker"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
 
-type imageHandler interface {
-	Handle(context.Context, ocischemav1.Descriptor) error
-}
-
-func newImageCopier(ctx context.Context, resolver docker.ResolverBlobMounter, sourceFetcher remotes.Fetcher, targetRepo string) (imageCopier, error) {
+func newDescriptorCopier(ctx context.Context, resolver remotes.Resolver, sourceFetcher remotes.Fetcher, targetRepo string, eventNotifier eventNotifier) (*descriptorCopier, error) {
 	destPusher, err := resolver.Pusher(ctx, targetRepo)
 	if err != nil {
-		return imageCopier{}, err
+		return nil, err
 	}
-	return imageCopier{
+	return &descriptorCopier{
 		sourceFetcher: sourceFetcher,
 		targetPusher:  destPusher,
+		eventNotifier: eventNotifier,
+		resolver:      resolver,
 	}, nil
 }
 
-type imageCopier struct {
+type descriptorCopier struct {
 	sourceFetcher remotes.Fetcher
 	targetPusher  remotes.Pusher
+	eventNotifier eventNotifier
+	resolver      remotes.Resolver
 }
 
-func (h *imageCopier) Handle(ctx context.Context, desc ocischemav1.Descriptor) (err error) {
+func (h *descriptorCopier) Handle(ctx context.Context, desc *descriptorProgress) (retErr error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	if len(desc.URLs) > 0 {
-		fmt.Fprintf(os.Stderr, "Skipping foreign descriptor %s with media type %s (size: %d)\n", desc.Digest, desc.MediaType, desc.Size)
+		desc.markDone()
+		desc.setAction("Skip (foreign layer)")
 		return nil
 	}
-	fmt.Fprintf(os.Stderr, "Copying descriptor %s with media type %s (size: %d)\n", desc.Digest, desc.MediaType, desc.Size)
-	reader, err := h.sourceFetcher.Fetch(ctx, desc)
+	desc.setAction("Copy")
+	h.eventNotifier.reportProgress(nil)
+	defer func() {
+		if retErr != nil {
+			desc.setError(retErr)
+		}
+		h.eventNotifier.reportProgress(retErr)
+	}()
+	writer, err := h.targetPusher.Push(ctx, desc.Descriptor)
+	if errors.Cause(err) == errdefs.ErrAlreadyExists {
+		desc.markDone()
+		if strings.Contains(err.Error(), "mounted") {
+			desc.setAction("Mounted")
+		}
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	defer writer.Close()
+	reader, err := h.sourceFetcher.Fetch(ctx, desc.Descriptor)
 	if err != nil {
 		return err
 	}
 	defer reader.Close()
-	writer, err := h.targetPusher.Push(ctx, desc)
-	if err != nil {
-		if errors.Cause(err) == errdefs.ErrAlreadyExists {
-			return nil
-		}
-		return err
-	}
-	defer writer.Close()
 	err = content.Copy(ctx, writer, reader, desc.Size, desc.Digest)
 	if errors.Cause(err) == errdefs.ErrAlreadyExists {
-		return nil
+		err = nil
+	}
+	if err == nil {
+		desc.markDone()
 	}
 	return err
-}
-
-func newImageMounter(
-	ctx context.Context,
-	resolver docker.ResolverBlobMounter,
-	copier imageCopier,
-	sourceRepo,
-	targetRepo string) (imageMounter, error) {
-
-	destMounter, err := resolver.BlobMounter(ctx, targetRepo)
-	if err != nil {
-		return imageMounter{}, err
-	}
-
-	return imageMounter{
-		imageCopier:   copier,
-		targetMounter: destMounter,
-		sourceRepo:    sourceRepo,
-	}, nil
-}
-
-type imageMounter struct {
-	imageCopier
-	sourceRepo    string
-	targetMounter docker.BlobMounter
 }
 
 func isManifest(mediaType string) bool {
@@ -92,23 +83,6 @@ func isManifest(mediaType string) bool {
 		mediaType == images.MediaTypeDockerSchema2ManifestList ||
 		mediaType == ocischemav1.MediaTypeImageIndex ||
 		mediaType == ocischemav1.MediaTypeImageManifest
-}
-
-func (h *imageMounter) Handle(ctx context.Context, desc ocischemav1.Descriptor) error {
-	if len(desc.URLs) > 0 {
-		fmt.Fprintf(os.Stderr, "Skipping foreign descriptor %s with media type %s (size: %d)\n", desc.Digest, desc.MediaType, desc.Size)
-		return nil
-	}
-	if isManifest(desc.MediaType) {
-		// manifests are copied
-		return h.imageCopier.Handle(ctx, desc)
-	}
-	fmt.Fprintf(os.Stderr, "Mounting descriptor %s with media type %s (size: %d)\n", desc.Digest, desc.MediaType, desc.Size)
-	err := h.targetMounter.MountBlob(ctx, desc, h.sourceRepo)
-	if errors.Cause(err) == errdefs.ErrAlreadyExists {
-		return nil
-	}
-	return err
 }
 
 type imageContentProvider struct {
@@ -150,17 +124,88 @@ func (r *remoteReaderAt) ReadAt(p []byte, off int64) (int, error) {
 	return n, err
 }
 
-type descriptorAccumulator struct {
-	descriptors []ocischemav1.Descriptor
+type descriptorContentHandler struct {
+	descriptorCopier *descriptorCopier
+	targetRepo       string
 }
 
-func (a *descriptorAccumulator) Handle(ctx context.Context, desc ocischemav1.Descriptor) ([]ocischemav1.Descriptor, error) {
-	descs := make([]ocischemav1.Descriptor, len(a.descriptors)+1)
-	descs[0] = desc
-	for i, d := range a.descriptors {
-		descs[i+1] = d
+func (h *descriptorContentHandler) createCopyTask(ctx context.Context, descProgress *descriptorProgress) (func(ctx context.Context) error, error) {
+	copyOrMountWorkItem := func(ctx context.Context) error {
+		return h.descriptorCopier.Handle(ctx, descProgress)
 	}
+	if !isManifest(descProgress.MediaType) {
+		return copyOrMountWorkItem, nil
+	}
+	_, _, err := h.descriptorCopier.resolver.Resolve(ctx, fmt.Sprintf("%s@%s", h.targetRepo, descProgress.Digest))
+	if err == nil {
+		descProgress.setAction("Skip (already present)")
+		descProgress.markDone()
+		return nil, errdefs.ErrAlreadyExists
+	}
+	return copyOrMountWorkItem, nil
+}
 
-	a.descriptors = descs
-	return nil, nil
+type manifestWalker struct {
+	getChildren    images.HandlerFunc
+	eventNotifier  eventNotifier
+	scheduler      scheduler
+	progress       *progress
+	contentHandler *descriptorContentHandler
+}
+
+func newManifestWalker(eventNotifier eventNotifier, scheduler scheduler,
+	progress *progress, descriptorContentHandler *descriptorContentHandler) *manifestWalker {
+	sourceFetcher := descriptorContentHandler.descriptorCopier.sourceFetcher
+	return &manifestWalker{
+		eventNotifier:  eventNotifier,
+		getChildren:    images.ChildrenHandler(&imageContentProvider{sourceFetcher}),
+		scheduler:      scheduler,
+		progress:       progress,
+		contentHandler: descriptorContentHandler,
+	}
+}
+
+func (w *manifestWalker) walk(ctx context.Context, desc ocischemav1.Descriptor, parent *descriptorProgress) promise {
+	select {
+	case <-ctx.Done():
+		return newPromise(w.scheduler, ctx)
+	default:
+	}
+	descProgress := &descriptorProgress{
+		Descriptor: desc,
+	}
+	if parent != nil {
+		parent.addChild(descProgress)
+	} else {
+		w.progress.addRoot(descProgress)
+	}
+	copyOrMountWorkItem, err := w.contentHandler.createCopyTask(ctx, descProgress)
+	if errors.Cause(err) == errdefs.ErrAlreadyExists {
+		w.eventNotifier.reportProgress(nil)
+		return newPromise(w.scheduler, doneDependency{})
+	}
+	if err != nil {
+		w.eventNotifier.reportProgress(err)
+		return newPromise(w.scheduler, failedDependency{err: err})
+	}
+	childrenPromise := scheduleAndUnwrap(w.scheduler, func(ctx context.Context) (dependency, error) {
+		var deps []dependency
+		children, err := w.getChildren.Handle(ctx, desc)
+		if err != nil {
+			return nil, err
+		}
+		for _, c := range children {
+			dep := w.walk(ctx, c, descProgress)
+			deps = append(deps, dep)
+		}
+		return newPromise(w.scheduler, whenAll(deps)), nil
+	})
+
+	return childrenPromise.then(copyOrMountWorkItem)
+}
+
+type eventNotifier func(eventType FixupEventType, message string, err error)
+
+func (n eventNotifier) reportProgress(err error) {
+	n(FixupEventTypeProgress, "", err)
 }

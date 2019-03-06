@@ -22,7 +22,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"path"
 	"strings"
 	"time"
@@ -43,90 +42,22 @@ type dockerPusher struct {
 	tag string
 
 	// TODO: namespace tracker
-	tracker StatusTracker
+	tracker        StatusTracker
+	originProvider func(ocispec.Descriptor) []reference.Spec
 }
 
-func (p dockerPusher) MountBlob(ctx context.Context, desc ocispec.Descriptor, from string) error {
-	originRef, err := reference.Parse(from)
-	if err != nil {
-		return err
-	}
-	ctx, err = contextWithMountScope(ctx, originRef, p.refspec)
-	if err != nil {
-		return err
-	}
-	ref := remotes.MakeRefKey(ctx, desc)
-	status, err := p.tracker.GetStatus(ref)
-	if err == nil {
-		if status.Offset == status.Total {
-			return errors.Wrapf(errdefs.ErrAlreadyExists, "ref %v", ref)
-		}
-		// TODO: Handle incomplete status
-	} else if !errdefs.IsNotFound(err) {
-		return errors.Wrap(err, "failed to get status")
-	}
-
-	existCheck := path.Join("blobs", desc.Digest.String())
-
-	req, err := http.NewRequest(http.MethodHead, p.url(existCheck), nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Accept", strings.Join([]string{desc.MediaType, `*`}, ", "))
-	resp, err := p.doRequestWithRetries(ctx, req, nil)
-	if err != nil {
-		if errors.Cause(err) != ErrInvalidAuthorization {
-			return err
-		}
-		log.G(ctx).WithError(err).Debugf("Unable to check existence, continuing with mount")
-	} else {
-		if resp.StatusCode == http.StatusOK {
-			p.tracker.SetStatus(ref, Status{
-				Status: content.Status{
-					Ref: ref,
-					// TODO: Set updated time?
-				},
-			})
-			return errors.Wrapf(errdefs.ErrAlreadyExists, "content %v on remote", desc.Digest)
-		} else if resp.StatusCode != http.StatusNotFound {
-			// TODO: log error
-			return errors.Errorf("unexpected response: %s", resp.Status)
+func findMatchingOrigins(targetRef reference.Spec, origins []reference.Spec) []reference.Spec {
+	var result []reference.Spec
+	for _, origin := range origins {
+		if origin.Hostname() == targetRef.Hostname() {
+			result = append(result, origin)
 		}
 	}
-
-	i := strings.Index(originRef.Locator, "/")
-	originRepoPath := originRef.Locator[i+1:]
-	req, err = http.NewRequest(http.MethodPost, fmt.Sprintf("%s/?mount=%s&from=%s", p.url("blobs", "uploads"), desc.Digest, originRepoPath), nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err = p.doRequestWithRetries(ctx, req, nil)
-	if err != nil {
-		return err
-	}
-
-	switch resp.StatusCode {
-	case http.StatusCreated:
-	default:
-		// TODO: log error
-		return errors.Errorf("unexpected response: %s", resp.Status)
-	}
-
-	p.tracker.SetStatus(ref, Status{
-		Status: content.Status{
-			Ref:       ref,
-			Total:     desc.Size,
-			Expected:  desc.Digest,
-			StartedAt: time.Now(),
-			Offset:    desc.Size,
-		},
-	})
-	return nil
+	return result
 }
 
 func (p dockerPusher) Push(ctx context.Context, desc ocispec.Descriptor) (content.Writer, error) {
-	ctx, err := contextWithRepositoryScope(ctx, p.refspec, true)
+	ctx, err := contextWithRepositoryScope(ctx, p.refspec, true, false)
 	if err != nil {
 		return nil, err
 	}
@@ -214,6 +145,48 @@ func (p dockerPusher) Push(ctx context.Context, desc ocispec.Descriptor) (conten
 		}
 		req.Header.Add("Content-Type", desc.MediaType)
 	} else {
+		mountCandidates := findMatchingOrigins(p.refspec, p.originProvider(desc))
+		for _, mountCandidate := range mountCandidates {
+			ctx, err := contextWithRepositoryScope(ctx, mountCandidate, false, true)
+			if err != nil {
+				// try next candidate
+				continue
+			}
+			i := strings.Index(mountCandidate.Locator, "/")
+			originRepoPath := mountCandidate.Locator[i+1:]
+			req, err = http.NewRequest(http.MethodPost, fmt.Sprintf("%s/?mount=%s&from=%s", p.url("blobs", "uploads"), desc.Digest, originRepoPath), nil)
+			if err != nil {
+				// try next candidate
+				continue
+			}
+
+			resp, err = p.doRequestWithRetries(ctx, req, nil)
+			if err != nil {
+				// try next candidate
+				continue
+			}
+
+			switch resp.StatusCode {
+			case http.StatusCreated:
+			default:
+				// try next candidate
+				continue
+			}
+
+			p.tracker.SetStatus(ref, Status{
+				Status: content.Status{
+					Ref:       ref,
+					Total:     desc.Size,
+					Expected:  desc.Digest,
+					StartedAt: time.Now(),
+					Offset:    desc.Size,
+				},
+			})
+			// mount succeeded, returning a nil writer, without error
+			return nil, errors.Wrapf(errdefs.ErrAlreadyExists, "content %v mounted from %s", desc.Digest, mountCandidate)
+		}
+		// no mount candidates found, or mount failure, fallback to real push
+
 		// TODO: Do monolithic upload if size is small
 
 		// Start upload request
@@ -369,8 +342,6 @@ func (pw *pushWriter) Commit(ctx context.Context, size int64, expected digest.Di
 	switch resp.StatusCode {
 	case http.StatusOK, http.StatusCreated, http.StatusNoContent:
 	default:
-		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Fprintln(os.Stderr, string(body))
 		return errors.Errorf("unexpected status: %s", resp.Status)
 	}
 

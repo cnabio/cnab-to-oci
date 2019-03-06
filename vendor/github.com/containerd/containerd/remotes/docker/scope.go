@@ -46,24 +46,18 @@ func repositoryScope(refspec reference.Spec, push bool) (string, error) {
 type tokenScopesKey struct{}
 
 // contextWithRepositoryScope returns a context with tokenScopesKey{} and the repository scope value.
-func contextWithRepositoryScope(ctx context.Context, refspec reference.Spec, push bool) (context.Context, error) {
+func contextWithRepositoryScope(ctx context.Context, refspec reference.Spec, push bool, combineWithExistingScopes bool) (context.Context, error) {
 	s, err := repositoryScope(refspec, push)
 	if err != nil {
 		return nil, err
 	}
-	return context.WithValue(ctx, tokenScopesKey{}, []string{s}), nil
-}
-
-func contextWithMountScope(ctx context.Context, from, to reference.Spec) (context.Context, error) {
-	sFrom, err := repositoryScope(from, false)
-	if err != nil {
-		return nil, err
+	scopes := []string{s}
+	if combineWithExistingScopes {
+		if existing := ctx.Value(tokenScopesKey{}); existing != nil {
+			scopes = append(existing.([]string), s)
+		}
 	}
-	sTo, err := repositoryScope(to, true)
-	if err != nil {
-		return nil, err
-	}
-	return context.WithValue(ctx, tokenScopesKey{}, []string{sFrom, sTo}), nil
+	return context.WithValue(ctx, tokenScopesKey{}, scopes), nil
 }
 
 type tokenScope struct {
@@ -95,6 +89,7 @@ func parseTokenScope(s string) (tokenScope, error) {
 	}, nil
 }
 
+// mergeTokenScope add a scope to an existing scope collection, ensuring deduplication
 func mergeTokenScope(existing map[string]tokenScope, newElem tokenScope) {
 	match, ok := existing[newElem.resource]
 	if !ok {
@@ -109,25 +104,21 @@ func mergeTokenScope(existing map[string]tokenScope, newElem tokenScope) {
 
 // getTokenScopes returns deduplicated and sorted scopes from ctx.Value(tokenScopesKey{}) and params["scope"].
 func getTokenScopes(ctx context.Context, params map[string]string) ([]string, error) {
-	tokenScopes := map[string]tokenScope{}
+	var rawScopes []string
 	if x := ctx.Value(tokenScopesKey{}); x != nil {
-		for _, scope := range x.([]string) {
-			ts, err := parseTokenScope(scope)
-			if err != nil {
-				return nil, err
-			}
-			mergeTokenScope(tokenScopes, ts)
-		}
+		rawScopes = x.([]string)
 	}
 	if paramScopesFlat, ok := params["scope"]; ok {
 		paramScopes := strings.Split(paramScopesFlat, " ")
-		for _, scope := range paramScopes {
-			ts, err := parseTokenScope(scope)
-			if err != nil {
-				return nil, err
-			}
-			mergeTokenScope(tokenScopes, ts)
+		rawScopes = append(rawScopes, paramScopes...)
+	}
+	tokenScopes := map[string]tokenScope{}
+	for _, rawScope := range rawScopes {
+		parsedScope, err := parseTokenScope(rawScope)
+		if err != nil {
+			return nil, err
 		}
+		mergeTokenScope(tokenScopes, parsedScope)
 	}
 	var scopes []string
 	for _, s := range tokenScopes {
