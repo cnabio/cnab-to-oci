@@ -6,20 +6,17 @@ PKG_NAME := github.com/docker/cnab-to-oci
 EXEC_EXT :=
 ifeq ($(OS),Windows_NT)
   EXEC_EXT := .exe
-  NULL := nul
-else
-  NULL := /dev/null
 endif
 
 ifeq ($(TAG),)
-  TAG := $(shell git describe --always --dirty 2> $(NULL))
+  TAG := $(shell git describe --always --dirty 2> /dev/null)
 endif
 ifeq ($(COMMIT),)
-  COMMIT := $(shell git rev-parse --short HEAD 2> $(NULL))
+  COMMIT := $(shell git rev-parse --short HEAD 2> /dev/null)
 endif
 
 ifeq ($(BUILDTIME),)
-  BUILDTIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2> $(NULL))
+  BUILDTIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
 endif
 ifeq ($(BUILDTIME),)
   BUILDTIME := unknown
