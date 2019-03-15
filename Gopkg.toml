@@ -35,7 +35,7 @@
 [[constraint]]
   name = "github.com/containerd/containerd"
   source = "github.com/simonferquel/containerd"
-  revision = "6530636c92c836d8ab2d8b710c79ccdd6c43350e"
+  revision = "42c3614d58767e96c1752977fed94d0b140a0173"
 
 [[override]]
   name = "github.com/docker/cli"
