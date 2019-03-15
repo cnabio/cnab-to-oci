@@ -37,7 +37,7 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:98892dfa8897aaed7f4004a5c8fb28515dd3102d5b1fcd0c4987e31abc720f80"
+  digest = "1:b3d191e1cb5aa5cc0761490345daa787150961b09bd9dec613207a4f8ec884be"
   name = "github.com/containerd/containerd"
   packages = [
     "content",
@@ -51,7 +51,7 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "90dba5c4c05ca098b3de790d1f6f8ca1280ba921"
+  revision = "6530636c92c836d8ab2d8b710c79ccdd6c43350e"
   source = "github.com/simonferquel/containerd"
 
 [[projects]]
@@ -440,6 +440,7 @@
     "github.com/containerd/containerd/content",
     "github.com/containerd/containerd/errdefs",
     "github.com/containerd/containerd/images",
+    "github.com/containerd/containerd/reference",
     "github.com/containerd/containerd/remotes",
     "github.com/containerd/containerd/remotes/docker",
     "github.com/deislabs/duffle/pkg/bundle",
