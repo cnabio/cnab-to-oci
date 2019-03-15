@@ -37,12 +37,13 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:b3d191e1cb5aa5cc0761490345daa787150961b09bd9dec613207a4f8ec884be"
+  digest = "1:8b7b2605b931bc8e70a0fa84bbd7bc1cde881ca3f2106bbb2917f3b52c342e7b"
   name = "github.com/containerd/containerd"
   packages = [
     "content",
     "errdefs",
     "images",
+    "labels",
     "log",
     "platforms",
     "reference",
@@ -51,7 +52,7 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "6530636c92c836d8ab2d8b710c79ccdd6c43350e"
+  revision = "42c3614d58767e96c1752977fed94d0b140a0173"
   source = "github.com/simonferquel/containerd"
 
 [[projects]]
