@@ -71,7 +71,7 @@ func MakeTestBundle() *bundle.Bundle {
 func MakeTestOCIIndex() *ocischemav1.Index {
 	return &ocischemav1.Index{
 		Versioned: ocischema.Versioned{
-			SchemaVersion: 1,
+			SchemaVersion: 2,
 		},
 		Annotations: map[string]string{
 			"io.docker.app.format":            "cnab",
@@ -82,6 +82,7 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 			ocischemav1.AnnotationAuthors:     `[{"name":"docker","email":"docker@docker.com","url":"docker.com"}]`,
 			"io.cnab.keywords":                `["keyword1","keyword2"]`,
 			"io.docker.type":                  "app",
+			"org.opencontainers.artifactType": "application/vnd.cnab.manifest.v1",
 		},
 		Manifests: []ocischemav1.Descriptor{
 			{
@@ -89,7 +90,7 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 				MediaType: schema2.MediaTypeManifest,
 				Size:      315,
 				Annotations: map[string]string{
-					"io.cnab.type": "config",
+					"io.cnab.manifest.type": "config",
 				},
 			},
 			{
@@ -97,7 +98,7 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 				MediaType: "application/vnd.docker.distribution.manifest.v2+json",
 				Size:      506,
 				Annotations: map[string]string{
-					"io.cnab.type": "invocation",
+					"io.cnab.manifest.type": "invocation",
 				},
 			},
 			{
@@ -105,9 +106,9 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 				MediaType: "application/vnd.oci.image.manifest.v1+json",
 				Size:      507,
 				Annotations: map[string]string{
-					"io.cnab.type":           "component",
-					"io.cnab.component_name": "image-1",
-					"io.cnab.original_name":  "nginx:2.12",
+					"io.cnab.manifest.type":           "component",
+					"io.cnab.component.name":          "image-1",
+					"io.cnab.component.original_name": "nginx:2.12",
 				},
 			},
 		},

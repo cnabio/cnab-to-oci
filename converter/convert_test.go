@@ -186,7 +186,7 @@ func TestConvertFromOCIToBundle(t *testing.T) {
 	ix = tests.MakeTestOCIIndex()
 	delete(ix.Manifests[1].Annotations, CNABDescriptorTypeAnnotation)
 	_, err = ConvertOCIIndexToBundle(ix, config, named)
-	assert.ErrorContains(t, err, "has no CNAB descriptor type annotation \"io.cnab.type\"")
+	assert.ErrorContains(t, err, "has no CNAB descriptor type annotation \"io.cnab.manifest.type\"")
 
 	// bad cnab type
 	ix = tests.MakeTestOCIIndex()

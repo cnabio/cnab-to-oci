@@ -66,6 +66,7 @@ func TestPull(t *testing.T) {
 	assert.DeepEqual(t, expectedBundle, b)
 }
 
+// nolint: lll
 func ExamplePull() {
 	// Use remotes.CreateResolver for creating your remotes.Resolver
 	resolver := createExampleResolver()
@@ -82,70 +83,7 @@ func ExamplePull() {
 
 	resultBundle.WriteTo(os.Stdout)
 	// Output:
-	// {
-	//     "name": "my-app",
-	//     "version": "0.1.0",
-	//     "description": "description",
-	//     "keywords": [
-	//         "keyword1",
-	//         "keyword2"
-	//     ],
-	//     "maintainers": [
-	//         {
-	//             "name": "docker",
-	//             "email": "docker@docker.com",
-	//             "url": "docker.com"
-	//         }
-	//     ],
-	//     "invocationImages": [
-	//         {
-	//             "imageType": "docker",
-	//             "image": "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
-	//             "size": 506,
-	//             "platform": {},
-	//             "mediaType": "application/vnd.docker.distribution.manifest.v2+json"
-	//         }
-	//     ],
-	//     "images": {
-	//         "image-1": {
-	//             "imageType": "oci",
-	//             "image": "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
-	//             "size": 507,
-	//             "platform": {},
-	//             "mediaType": "application/vnd.oci.image.manifest.v1+json",
-	//             "description": "nginx:2.12",
-	//             "refs": null
-	//         }
-	//     },
-	//     "actions": {
-	//         "action-1": {
-	//             "modifies": true
-	//         }
-	//     },
-	//     "parameters": {
-	//         "param1": {
-	//             "type": "type",
-	//             "defaultValue": "hello",
-	//             "allowedValues": [
-	//                 "value1",
-	//                 true,
-	//                 1
-	//             ],
-	//             "required": false,
-	//             "metadata": {},
-	//             "destination": {
-	//                 "path": "/some/path",
-	//                 "env": "env_var"
-	//             }
-	//         }
-	//     },
-	//     "credentials": {
-	//         "cred-1": {
-	//             "path": "/some/path",
-	//             "env": "env-var"
-	//         }
-	//     }
-	// }
+	//{"actions":{"action-1":{"modifies":true}},"credentials":{"cred-1":{"env":"env-var","path":"/some/path"}},"description":"description","images":{"image-1":{"description":"nginx:2.12","image":"my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341","imageType":"oci","mediaType":"application/vnd.oci.image.manifest.v1+json","size":507}},"invocationImages":[{"image":"my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341","imageType":"docker","mediaType":"application/vnd.docker.distribution.manifest.v2+json","size":506}],"keywords":["keyword1","keyword2"],"maintainers":[{"email":"docker@docker.com","name":"docker","url":"docker.com"}],"name":"my-app","parameters":{"param1":{"allowedValues":["value1",true,1],"defaultValue":"hello","destination":{"env":"env_var","path":"/some/path"},"metadata":{},"type":"type"}},"version":"0.1.0"}
 }
 
 const (
@@ -153,11 +91,11 @@ const (
   "schemaVersion": 1,
   "manifests": [
     {
-      "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
       "digest": "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
       "size": 315,
       "annotations": {
-        "io.cnab.type": "config"
+        "io.cnab.manifest.type": "config"
       }
     },
     {
@@ -165,7 +103,7 @@ const (
       "digest": "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
       "size": 506,
       "annotations": {
-        "io.cnab.type": "invocation"
+        "io.cnab.manifest.type": "invocation"
       }
     },
     {
@@ -173,9 +111,9 @@ const (
       "digest": "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
       "size": 507,
       "annotations": {
-        "io.cnab.component_name": "image-1",
-        "io.cnab.original_name": "nginx:2.12",
-        "io.cnab.type": "component"
+        "io.cnab.component.name": "image-1",
+        "io.cnab.component.original_name": "nginx:2.12",
+        "io.cnab.manifest.type": "component"
       }
     }
   ],
@@ -193,9 +131,8 @@ const (
 
 	bundleConfigManifestDescriptor = `{
    "schemaVersion": 2,
-   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
    "config": {
-      "mediaType": "application/vnd.docker.container.image.v1+json",
+      "mediaType": "application/vnd.cnab.config.v1+json",
       "size": 315,
       "digest": "sha256:e2337974e94637d3fab7004f87501e605b08bca3adf9ecd356909a9329da128a"
    },

@@ -65,11 +65,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f986e081394e51dd9148b3c04a28c7eb31665cac24965609954696b45f09171d"
+  digest = "1:68c267581c0fb453a08d921d33bca20d66f917506b91dc7e8bdc4bdb63176a6d"
   name = "github.com/deislabs/duffle"
   packages = ["pkg/bundle"]
   pruneopts = "UT"
-  revision = "a67fb624321f98e3b521f3179ed3015963e95ba2"
+  revision = "9551a6de40c99ac678a4dde5ebcbb4d6b7de706b"
 
 [[projects]]
   digest = "1:982e3778851f5bb802c164c0baffa67eb7447b189211a08dd18acaa03b4d30c0"
@@ -147,6 +147,14 @@
   ]
   pruneopts = "UT"
   revision = "5241b46610f2491efdf9d1c85f1ddf5b02f6d962"
+
+[[projects]]
+  digest = "1:44fd27d0559326eb63ee0b7b5c80832c821761ff6d1b9cc4ad075783485a5837"
+  name = "github.com/docker/go"
+  packages = ["canonical/json"]
+  pruneopts = "UT"
+  revision = "62e5ec7cf43f795986ec658df7cb317255772993"
+  version = "v1.5.1-1"
 
 [[projects]]
   digest = "1:811c86996b1ca46729bad2724d4499014c4b9effd05ef8c71b852aad90deb0ce"
