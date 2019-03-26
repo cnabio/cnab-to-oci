@@ -8,9 +8,8 @@ import (
 	"testing"
 
 	"github.com/deislabs/duffle/pkg/bundle"
-
+	"github.com/docker/cnab-to-oci/converter"
 	"github.com/docker/cnab-to-oci/tests"
-	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"gotest.tools/assert"
@@ -33,8 +32,6 @@ const (
         true,
         1
       ],
-      "required": false,
-      "metadata": {},
       "destination": {
         "path": "/some/path",
         "env": "env_var"
@@ -50,14 +47,14 @@ const (
 }`
 
 	expectedBundleManifest = `{
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "manifests": [
     {
-      "mediaType":"application/vnd.docker.distribution.manifest.v2+json",
-      "digest":"sha256:1b19eb80fc8e5c84ff912d75c228d968b30a6b7553ea44de94acc1958e320268",
-      "size":315,
+      "mediaType":"application/vnd.oci.image.manifest.v1+json",
+      "digest":"sha256:5916f8d22b2bd25dd046cc23f275257b0a4e5fe14655c6ffc89618d646a7dd07",
+      "size":188,
       "annotations":{
-        "io.cnab.type":"config"
+        "io.cnab.manifest.type":"config"
       }
     },
     {
@@ -65,7 +62,7 @@ const (
       "digest": "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
       "size": 506,
       "annotations": {
-        "io.cnab.type": "invocation"
+        "io.cnab.manifest.type": "invocation"
       }
     },
     {
@@ -73,9 +70,9 @@ const (
       "digest": "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
       "size": 507,
       "annotations": {
-        "io.cnab.component_name": "image-1",
-        "io.cnab.original_name": "nginx:2.12",
-        "io.cnab.type": "component"
+        "io.cnab.component.name": "image-1",
+        "io.cnab.component.original_name": "nginx:2.12",
+        "io.cnab.manifest.type": "component"
       }
     }
   ],
@@ -84,6 +81,7 @@ const (
     "io.cnab.runtime_version": "v1.0.0-WD",
     "io.docker.app.format": "cnab",
     "io.docker.type": "app",
+    "org.opencontainers.artifactType": "application/vnd.cnab.manifest.v1",
     "org.opencontainers.image.authors": "[{\"name\":\"docker\",\"email\":\"docker@docker.com\",\"url\":\"docker.com\"}]",
     "org.opencontainers.image.description": "description",
     "org.opencontainers.image.title": "my-app",
@@ -100,7 +98,7 @@ func TestPush(t *testing.T) {
 	assert.NilError(t, err)
 
 	// push the bundle
-	_, err = Push(context.Background(), b, ref, resolver)
+	_, err = Push(context.Background(), b, ref, resolver, true)
 	assert.NilError(t, err)
 	assert.Equal(t, len(resolver.pushedReferences), 3)
 	assert.Equal(t, len(pusher.pushedDescriptors), 3)
@@ -108,12 +106,12 @@ func TestPush(t *testing.T) {
 
 	// check pushed config
 	assert.Equal(t, "my.registry/namespace/my-app", resolver.pushedReferences[0])
-	assert.Equal(t, schema2.MediaTypeImageConfig, pusher.pushedDescriptors[0].MediaType)
+	assert.Equal(t, converter.CNABConfigMediaType, pusher.pushedDescriptors[0].MediaType)
 	assert.Equal(t, oneLiner(expectedBundleConfig), pusher.buffers[0].String())
 
 	// check pushed config manifest
 	assert.Equal(t, "my.registry/namespace/my-app", resolver.pushedReferences[1])
-	assert.Equal(t, schema2.MediaTypeManifest, pusher.pushedDescriptors[1].MediaType)
+	assert.Equal(t, ocischemav1.MediaTypeImageManifest, pusher.pushedDescriptors[1].MediaType)
 
 	// check pushed bundle manifest index
 	assert.Equal(t, "my.registry/namespace/my-app:my-tag", resolver.pushedReferences[2])
@@ -134,7 +132,7 @@ func ExamplePush() {
 	}
 
 	// Push the bundle here
-	descriptor, err := Push(context.Background(), b, ref, resolver)
+	descriptor, err := Push(context.Background(), b, ref, resolver, true)
 	if err != nil {
 		panic(err)
 	}
@@ -149,8 +147,8 @@ func ExamplePush() {
 	// Output:
 	// {
 	//   "mediaType": "application/vnd.oci.image.index.v1+json",
-	//   "digest": "sha256:0bdc6f9c71c3f429203cdf63c87d23f27dd3e08e310df306f208c71b45fac05f",
-	//   "size": 1121
+	//   "digest": "sha256:4c510aef87d55a8b5b456a5c82d799472597e3440ea423756c1c2e711c9a1905",
+	//   "size": 1217
 	// }
 }
 
