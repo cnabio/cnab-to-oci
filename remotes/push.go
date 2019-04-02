@@ -8,7 +8,7 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes"
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cnab-to-oci/converter"
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"

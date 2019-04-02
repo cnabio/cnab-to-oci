@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
 	"github.com/spf13/cobra"

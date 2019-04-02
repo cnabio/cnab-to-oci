@@ -3,7 +3,7 @@ package converter
 import (
 	"encoding/json"
 
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/opencontainers/go-digest"
