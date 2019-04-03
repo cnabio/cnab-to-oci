@@ -154,15 +154,15 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 		}
 	}()
 	notifyEvent(FixupEventTypeCopyImageStart, "", nil)
-	repoOnly, imageRef, descriptor, err := fixupBaseImage(ctx, &baseImage, cfg.targetRef, cfg.resolverConfig.Resolver)
+	fixupInfo, err := fixupBaseImage(ctx, &baseImage, cfg.targetRef, cfg.resolverConfig.Resolver)
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
-	if imageRef.Name() == cfg.targetRef.Name() {
-		notifyEvent(FixupEventTypeCopyImageEnd, "Nothing to do: image reference is already present in repository"+repoOnly.String(), nil)
+	if fixupInfo.sourceRef.Name() == fixupInfo.targetRepo.Name() {
+		notifyEvent(FixupEventTypeCopyImageEnd, "Nothing to do: image reference is already present in repository"+fixupInfo.targetRepo.String(), nil)
 		return baseImage, nil
 	}
-	sourceRepoOnly, err := reference.ParseNormalizedNamed(imageRef.Name())
+	sourceRepoOnly, err := reference.ParseNormalizedNamed(fixupInfo.sourceRef.Name())
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
@@ -170,18 +170,18 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
-	if err := setFromImageReference(cfg.resolverConfig.OriginProviderWrapper, imageRef); err != nil {
+	if err := setFromImageReference(cfg.resolverConfig.OriginProviderWrapper, fixupInfo.sourceRef); err != nil {
 		return bundle.BaseImage{}, err
 	}
 
 	// Prepare the copier
-	copier, err := newDescriptorCopier(ctx, cfg.resolverConfig.Resolver, sourceFetcher, repoOnly.String(), notifyEvent)
+	copier, err := newDescriptorCopier(ctx, cfg.resolverConfig.Resolver, sourceFetcher, fixupInfo.targetRepo.String(), notifyEvent)
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
 	descriptorContentHandler := &descriptorContentHandler{
 		descriptorCopier: copier,
-		targetRepo:       repoOnly.String(),
+		targetRepo:       fixupInfo.targetRepo.String(),
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	scheduler := newErrgroupScheduler(ctx, cfg.maxConcurrentJobs, cfg.jobsBufferLength)
@@ -190,7 +190,7 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 		scheduler.drain()
 	}()
 	walker := newManifestWalker(notifyEvent, scheduler, progress, descriptorContentHandler)
-	walkerDep := walker.walk(scheduler.ctx(), descriptor, nil)
+	walkerDep := walker.walk(scheduler.ctx(), fixupInfo.resolvedDescriptor, nil)
 	if err = walkerDep.wait(); err != nil {
 		return bundle.BaseImage{}, err
 	}
@@ -198,38 +198,48 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 	return baseImage, nil
 }
 
+type imageFixupInfo struct {
+	targetRepo         reference.Named
+	sourceRef          reference.Named
+	resolvedDescriptor ocischemav1.Descriptor
+}
+
 func fixupBaseImage(ctx context.Context,
 	baseImage *bundle.BaseImage,
-	ref reference.Named, //nolint: interfacer
-	resolver remotes.Resolver) (reference.Named, reference.Named, ocischemav1.Descriptor, error) {
+	targetRef reference.Named, //nolint: interfacer
+	resolver remotes.Resolver) (imageFixupInfo, error) {
 	err := checkBaseImage(baseImage)
 	if err != nil {
-		err := fmt.Errorf("invalid image %q: %s", ref, err)
-		return nil, nil, ocischemav1.Descriptor{}, err
+		err := fmt.Errorf("invalid image %q: %s", baseImage.Image, err)
+		return imageFixupInfo{}, err
 	}
-	repoOnly, err := reference.ParseNormalizedNamed(ref.Name())
+	targetRepoOnly, err := reference.ParseNormalizedNamed(targetRef.Name())
 	if err != nil {
-		return nil, nil, ocischemav1.Descriptor{}, err
+		return imageFixupInfo{}, err
 	}
-	imageRef, err := reference.ParseNormalizedNamed(baseImage.Image)
+	sourceImageRef, err := reference.ParseNormalizedNamed(baseImage.Image)
 	if err != nil {
-		err = fmt.Errorf("%q is not a valid image reference for %q", baseImage.Image, ref)
-		return nil, nil, ocischemav1.Descriptor{}, err
+		err = fmt.Errorf("%q is not a valid image reference for %q", baseImage.Image, targetRef)
+		return imageFixupInfo{}, err
 	}
-	imageRef = reference.TagNameOnly(imageRef)
-	_, descriptor, err := resolver.Resolve(ctx, imageRef.String())
+	sourceImageRef = reference.TagNameOnly(sourceImageRef)
+	_, descriptor, err := resolver.Resolve(ctx, sourceImageRef.String())
 	if err != nil {
-		err = fmt.Errorf("failed to resolve %q, push the image to the registry before pushing the bundle: %s", imageRef, err)
-		return nil, nil, ocischemav1.Descriptor{}, err
+		err = fmt.Errorf("failed to resolve %q, push the image to the registry before pushing the bundle: %s", sourceImageRef, err)
+		return imageFixupInfo{}, err
 	}
-	digested, err := reference.WithDigest(repoOnly, descriptor.Digest)
+	digested, err := reference.WithDigest(targetRepoOnly, descriptor.Digest)
 	if err != nil {
-		return nil, nil, ocischemav1.Descriptor{}, err
+		return imageFixupInfo{}, err
 	}
 	baseImage.Image = reference.FamiliarString(digested)
 	baseImage.MediaType = descriptor.MediaType
 	baseImage.Size = uint64(descriptor.Size)
-	return repoOnly, imageRef, descriptor, nil
+	return imageFixupInfo{
+		resolvedDescriptor: descriptor,
+		sourceRef:          sourceImageRef,
+		targetRepo:         targetRepoOnly,
+	}, nil
 }
 
 func checkBaseImage(baseImage *bundle.BaseImage) error {
