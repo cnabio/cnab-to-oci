@@ -30,8 +30,7 @@
 
 [[constraint]]
   name = "github.com/deislabs/cnab-go"
-  source = "github.com/radu-matei/cnab-go"
-  revision = "af860b3fbc9a3c15c6e69ff4ea58d71e5decd77f"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/containerd/containerd"

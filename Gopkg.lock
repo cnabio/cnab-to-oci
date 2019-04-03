@@ -64,12 +64,12 @@
   revision = "004b46473808b3e7a4a3049c20e4376c91eb966d"
 
 [[projects]]
+  branch = "master"
   digest = "1:f5537515bc64edb9117ec396d197d88852d927185352ce08e2667562ef532a96"
   name = "github.com/deislabs/cnab-go"
   packages = ["bundle"]
   pruneopts = "UT"
-  revision = "af860b3fbc9a3c15c6e69ff4ea58d71e5decd77f"
-  source = "github.com/radu-matei/cnab-go"
+  revision = "1a73873b84025123a0f8fe84086e59493e051302"
 
 [[projects]]
   digest = "1:982e3778851f5bb802c164c0baffa67eb7447b189211a08dd18acaa03b4d30c0"
