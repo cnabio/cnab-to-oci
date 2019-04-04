@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/containerd/containerd/images"
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution/reference"
 	ocischema "github.com/opencontainers/image-spec/specs-go"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"

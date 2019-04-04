@@ -29,7 +29,7 @@
   version = "v1.0.1"
 
 [[constraint]]
-  name = "github.com/deislabs/duffle"
+  name = "github.com/deislabs/cnab-go"
   branch = "master"
 
 [[constraint]]
@@ -40,7 +40,7 @@
 [[override]]
   name = "github.com/docker/cli"
   revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
-  
+
 [[constraint]]
   name = "github.com/docker/distribution"
   revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
