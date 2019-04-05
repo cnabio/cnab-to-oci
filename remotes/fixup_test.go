@@ -10,7 +10,7 @@ import (
 
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes"
-	"github.com/deislabs/duffle/pkg/bundle"
+	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/reference"

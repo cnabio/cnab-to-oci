@@ -107,7 +107,7 @@
   revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
 
 [[projects]]
-  digest = "1:f4ad803466fb70bc85d73f53aa3e7ac5809fed2282dc0bd682011433de557090"
+  digest = "1:f6e77103fc4af8cad88aa1b08b7e45dbf32a0b69ada2d598712ea09bf164119b"
   name = "github.com/docker/docker"
   packages = [
     "api/types",
@@ -413,7 +413,7 @@
   version = "v1.19.1"
 
 [[projects]]
-  digest = "1:9d7d5988129436e49ee34d17bf0229065f9c45e6fc85cad160464bd488dcacca"
+  digest = "1:9be45fef1734baa90b8201fa238b4c21a8d6478c278bf22cb7a76eb8abb6156f"
   name = "gotest.tools"
   packages = [
     "assert",
