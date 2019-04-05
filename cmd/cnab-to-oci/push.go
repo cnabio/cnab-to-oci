@@ -18,6 +18,7 @@ type pushOptions struct {
 	targetRef          string
 	insecureRegistries []string
 	allowFallbacks     bool
+	platform           string
 }
 
 func pushCmd() *cobra.Command {
@@ -38,6 +39,7 @@ func pushCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&opts.targetRef, "target", "t", "", "reference where the bundle will be pushed")
 	cmd.Flags().StringSliceVar(&opts.insecureRegistries, "insecure-registries", nil, "Use plain HTTP for those registries")
 	cmd.Flags().BoolVar(&opts.allowFallbacks, "allow-fallbacks", true, "Enable automatic compatibility fallbacks for registries without support for custom media type, or OCI manifests")
+	cmd.Flags().StringVar(&opts.platform, "platform", "", "Single platform to push (instead of multi-arch images)")
 	return cmd
 }
 
@@ -56,7 +58,7 @@ func runPush(opts pushOptions) error {
 		return err
 	}
 
-	err = remotes.FixupBundle(context.Background(), &b, ref, resolverConfig, remotes.WithEventCallback(displayEvent))
+	err = remotes.FixupBundle(context.Background(), &b, ref, resolverConfig, remotes.WithEventCallback(displayEvent), remotes.WithSinglePlatform(opts.platform))
 	if err != nil {
 		return err
 	}

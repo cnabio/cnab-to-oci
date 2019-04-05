@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/containerd/containerd/images"
+	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes"
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cli/cli/config/configfile"
@@ -29,6 +30,7 @@ type fixupConfig struct {
 	maxConcurrentJobs int
 	jobsBufferLength  int
 	resolverConfig    ResolverConfig
+	platform          string
 }
 
 func (cfg *fixupConfig) complete() error {
@@ -36,6 +38,14 @@ func (cfg *fixupConfig) complete() error {
 		return errors.New("resolver and originProviderWrapper are required, please use a complete ResolverConfig")
 	}
 	return nil
+}
+
+// WithSinglePlatform use platform specif manifest instead of a manifestlist for multi-arch images
+func WithSinglePlatform(platform string) FixupOption {
+	return func(cfg *fixupConfig) error {
+		cfg.platform = platform
+		return nil
+	}
 }
 
 // WithEventCallback specifies a callback to execute for each Fixup event
@@ -158,6 +168,7 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
+
 	if fixupInfo.sourceRef.Name() == fixupInfo.targetRepo.Name() {
 		notifyEvent(FixupEventTypeCopyImageEnd, "Nothing to do: image reference is already present in repository"+fixupInfo.targetRepo.String(), nil)
 		return baseImage, nil
@@ -168,6 +179,9 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 	}
 	sourceFetcher, err := cfg.resolverConfig.Resolver.Fetcher(ctx, sourceRepoOnly.Name())
 	if err != nil {
+		return bundle.BaseImage{}, err
+	}
+	if err := fixupPlatform(ctx, cfg, &baseImage, &fixupInfo, sourceFetcher); err != nil {
 		return bundle.BaseImage{}, err
 	}
 	if err := setFromImageReference(cfg.resolverConfig.OriginProviderWrapper, fixupInfo.sourceRef); err != nil {
@@ -196,6 +210,40 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 	}
 	notifyEvent(FixupEventTypeCopyImageEnd, "", nil)
 	return baseImage, nil
+}
+
+// fixupPlatform resolve a single image manifest out of a manifest list if a platform filter has been specified
+// it modifies the baseImage and fixupInfo accordingly
+func fixupPlatform(ctx context.Context, cfg fixupConfig, baseImage *bundle.BaseImage, fixupInfo *imageFixupInfo, sourceFetcher remotes.Fetcher) error {
+	if cfg.platform == "" ||
+		(fixupInfo.resolvedDescriptor.MediaType != ocischemav1.MediaTypeImageIndex && fixupInfo.resolvedDescriptor.MediaType != images.MediaTypeDockerSchema2ManifestList) {
+		// no platform filter if platform is empty, or if the descriptor is not an OCI Index / Docker Manifest list
+		return nil
+	}
+
+	plat, err := platforms.Parse(cfg.platform)
+	if err != nil {
+		return err
+	}
+	matcher := platforms.NewMatcher(plat)
+
+	children, err := images.Children(ctx, &imageContentProvider{sourceFetcher}, fixupInfo.resolvedDescriptor)
+	if err != nil {
+		return err
+	}
+	for _, child := range children {
+		if child.Platform != nil && matcher.Match(*child.Platform) {
+			fixupInfo.resolvedDescriptor = child
+			newRef, err := reference.WithDigest(fixupInfo.targetRepo, child.Digest)
+			if err != nil {
+				return err
+			}
+			baseImage.Image = newRef.String()
+			return nil
+		}
+	}
+	return fmt.Errorf("no image found for platform %q in %q", cfg.platform, fixupInfo.sourceRef)
+
 }
 
 type imageFixupInfo struct {

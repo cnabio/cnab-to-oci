@@ -84,12 +84,13 @@
   revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
 
 [[projects]]
-  digest = "1:a3fb9b04b18e11842fdcb83fe3cdadebeee5adeee321f1048d61593345439491"
+  digest = "1:af0babe595fd909d91ceb00ced5324f1fe964927dd12745db00ef1738771b853"
   name = "github.com/docker/distribution"
   packages = [
     ".",
     "digestset",
     "manifest",
+    "manifest/manifestlist",
     "manifest/schema2",
     "metrics",
     "reference",
@@ -436,6 +437,7 @@
     "github.com/containerd/containerd/content",
     "github.com/containerd/containerd/errdefs",
     "github.com/containerd/containerd/images",
+    "github.com/containerd/containerd/platforms",
     "github.com/containerd/containerd/reference",
     "github.com/containerd/containerd/remotes",
     "github.com/containerd/containerd/remotes/docker",
@@ -444,6 +446,7 @@
     "github.com/docker/cli/cli/config/configfile",
     "github.com/docker/cli/opts",
     "github.com/docker/distribution",
+    "github.com/docker/distribution/manifest/manifestlist",
     "github.com/docker/distribution/manifest/schema2",
     "github.com/docker/distribution/reference",
     "github.com/docker/distribution/registry/client/auth",
