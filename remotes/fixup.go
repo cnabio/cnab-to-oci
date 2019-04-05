@@ -1,9 +1,13 @@
 package remotes
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"sync"
 
 	"github.com/containerd/containerd/images"
@@ -12,6 +16,7 @@ import (
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/distribution/reference"
+	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -24,13 +29,14 @@ func noopEventCallback(FixupEvent) {}
 
 // fixupConfig defines the input required for a Fixup operation
 type fixupConfig struct {
-	bundle            *bundle.Bundle
-	targetRef         reference.Named
-	eventCallback     func(FixupEvent)
-	maxConcurrentJobs int
-	jobsBufferLength  int
-	resolverConfig    ResolverConfig
-	platform          string
+	bundle                        *bundle.Bundle
+	targetRef                     reference.Named
+	eventCallback                 func(FixupEvent)
+	maxConcurrentJobs             int
+	jobsBufferLength              int
+	resolverConfig                ResolverConfig
+	invocationImagePlatformFilter []platforms.Matcher
+	componentImagePlatformFilter  []platforms.Matcher
 }
 
 func (cfg *fixupConfig) complete() error {
@@ -40,12 +46,40 @@ func (cfg *fixupConfig) complete() error {
 	return nil
 }
 
-// WithSinglePlatform use platform specif manifest instead of a manifestlist for multi-arch images
-func WithSinglePlatform(platform string) FixupOption {
+// WithInovcationImagePlatforms use filters platforms for an invocation image
+func WithInovcationImagePlatforms(supportedPlatforms []string) FixupOption {
 	return func(cfg *fixupConfig) error {
-		cfg.platform = platform
+		filter, err := toMatchers(supportedPlatforms)
+		if err != nil {
+			return err
+		}
+		cfg.invocationImagePlatformFilter = filter
 		return nil
 	}
+}
+
+// WithComponentImagePlatforms use filters platforms for an invocation image
+func WithComponentImagePlatforms(supportedPlatforms []string) FixupOption {
+	return func(cfg *fixupConfig) error {
+		filter, err := toMatchers(supportedPlatforms)
+		if err != nil {
+			return err
+		}
+		cfg.componentImagePlatformFilter = filter
+		return nil
+	}
+}
+
+func toMatchers(supportedPlatforms []string) ([]platforms.Matcher, error) {
+	result := make([]platforms.Matcher, len(supportedPlatforms))
+	for ix, p := range supportedPlatforms {
+		plat, err := platforms.Parse(p)
+		if err != nil {
+			return nil, err
+		}
+		result[ix] = platforms.NewMatcher(plat)
+	}
+	return result, nil
 }
 
 // WithEventCallback specifies a callback to execute for each Fixup event
@@ -133,11 +167,11 @@ func FixupBundle(ctx context.Context, b *bundle.Bundle, ref reference.Named, res
 	if len(b.InvocationImages) != 1 {
 		return fmt.Errorf("only one invocation image supported for bundle %q", ref)
 	}
-	if b.InvocationImages[0].BaseImage, err = fixupImage(ctx, b.InvocationImages[0].BaseImage, cfg, events); err != nil {
+	if b.InvocationImages[0].BaseImage, err = fixupImage(ctx, b.InvocationImages[0].BaseImage, cfg, events, cfg.invocationImagePlatformFilter); err != nil {
 		return err
 	}
 	for name, original := range b.Images {
-		if original.BaseImage, err = fixupImage(ctx, original.BaseImage, cfg, events); err != nil {
+		if original.BaseImage, err = fixupImage(ctx, original.BaseImage, cfg, events, cfg.componentImagePlatformFilter); err != nil {
 			return err
 		}
 		b.Images[name] = original
@@ -145,7 +179,7 @@ func FixupBundle(ctx context.Context, b *bundle.Bundle, ref reference.Named, res
 	return nil
 }
 
-func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig, events chan<- FixupEvent) (_ bundle.BaseImage, retErr error) {
+func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig, events chan<- FixupEvent, platformFilter []platforms.Matcher) (_ bundle.BaseImage, retErr error) {
 	progress := &progress{}
 	originalSource := baseImage.Image
 	notifyEvent := func(eventType FixupEventType, message string, err error) {
@@ -177,11 +211,12 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
-	sourceFetcher, err := cfg.resolverConfig.Resolver.Fetcher(ctx, sourceRepoOnly.Name())
+	f, err := cfg.resolverConfig.Resolver.Fetcher(ctx, sourceRepoOnly.Name())
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
-	if err := fixupPlatform(ctx, cfg, &baseImage, &fixupInfo, sourceFetcher); err != nil {
+	sourceFetcher := newSourceFetcherWithLocalData(f)
+	if err := fixupPlatforms(ctx, cfg, &baseImage, &fixupInfo, sourceFetcher, platformFilter); err != nil {
 		return bundle.BaseImage{}, err
 	}
 	if err := setFromImageReference(cfg.resolverConfig.OriginProviderWrapper, fixupInfo.sourceRef); err != nil {
@@ -212,21 +247,109 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 	return baseImage, nil
 }
 
-// fixupPlatform resolve a single image manifest out of a manifest list if a platform filter has been specified
-// it modifies the baseImage and fixupInfo accordingly
-func fixupPlatform(ctx context.Context, cfg fixupConfig, baseImage *bundle.BaseImage, fixupInfo *imageFixupInfo, sourceFetcher remotes.Fetcher) error {
-	if cfg.platform == "" ||
+func fixupPlatforms(ctx context.Context, cfg fixupConfig, baseImage *bundle.BaseImage, fixupInfo *imageFixupInfo, sourceFetcher sourceFetcherAdder, filter []platforms.Matcher) error {
+	if len(filter) == 0 ||
 		(fixupInfo.resolvedDescriptor.MediaType != ocischemav1.MediaTypeImageIndex && fixupInfo.resolvedDescriptor.MediaType != images.MediaTypeDockerSchema2ManifestList) {
 		// no platform filter if platform is empty, or if the descriptor is not an OCI Index / Docker Manifest list
 		return nil
 	}
+	if len(filter) == 1 {
+		return fixupSinglePlatform(ctx, cfg, baseImage, fixupInfo, sourceFetcher, filter[0])
+	}
 
-	plat, err := platforms.Parse(cfg.platform)
+	reader, err := sourceFetcher.Fetch(ctx, fixupInfo.resolvedDescriptor)
 	if err != nil {
 		return err
 	}
-	matcher := platforms.NewMatcher(plat)
+	defer reader.Close()
 
+	manifestBytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	var manifestList typelessManifestList
+	if err := json.Unmarshal(manifestBytes, &manifestList); err != nil {
+		return err
+	}
+	valid := 0
+	for _, d := range manifestList.Manifests {
+		if matchAny(d.Platform, filter) {
+			manifestList.Manifests[valid] = d
+			valid++
+		}
+	}
+	manifestList.Manifests = manifestList.Manifests[:valid]
+	manifestBytes, err = json.Marshal(&manifestList)
+	if err != nil {
+		return err
+	}
+	d := sourceFetcher.Add(manifestBytes)
+	descriptor := fixupInfo.resolvedDescriptor
+	descriptor.Digest = d
+	fixupInfo.resolvedDescriptor = descriptor
+	newRef, err := reference.WithDigest(fixupInfo.targetRepo, d)
+	if err != nil {
+		return err
+	}
+	baseImage.Image = newRef.String()
+	return nil
+}
+
+func matchAny(plat *ocischemav1.Platform, filter []platforms.Matcher) bool {
+	if plat == nil {
+		return false
+	}
+	for _, m := range filter {
+		if m.Match(*plat) {
+			return true
+		}
+	}
+	return false
+}
+
+type typelessManifestList struct {
+	Manifests []typelessDescriptor   `json:"manifests"`
+	Extras    map[string]interface{} `json:,inline`
+}
+
+type typelessDescriptor struct {
+	Platform *ocischemav1.Platform  `json:"platform,omitempty"`
+	Extras   map[string]interface{} `json:,inline`
+}
+
+type sourceFetcherAdder interface {
+	remotes.Fetcher
+	Add(data []byte) digest.Digest
+}
+
+type sourceFetcherWithLocalData struct {
+	inner     remotes.Fetcher
+	localData map[digest.Digest][]byte
+}
+
+func newSourceFetcherWithLocalData(inner remotes.Fetcher) *sourceFetcherWithLocalData {
+	return &sourceFetcherWithLocalData{
+		inner:     inner,
+		localData: make(map[digest.Digest][]byte),
+	}
+}
+
+func (s *sourceFetcherWithLocalData) Add(data []byte) digest.Digest {
+	d := digest.FromBytes(data)
+	s.localData[d] = data
+	return d
+}
+
+func (s *sourceFetcherWithLocalData) Fetch(ctx context.Context, desc ocischemav1.Descriptor) (io.ReadCloser, error) {
+	if v, ok := s.localData[desc.Digest]; ok {
+		return ioutil.NopCloser(bytes.NewReader(v)), nil
+	}
+	return s.inner.Fetch(ctx, desc)
+}
+
+// fixupSinglePlatform resolve a single image manifest out of a manifest list if a platform filter has been specified
+// it modifies the baseImage and fixupInfo accordingly
+func fixupSinglePlatform(ctx context.Context, cfg fixupConfig, baseImage *bundle.BaseImage, fixupInfo *imageFixupInfo, sourceFetcher remotes.Fetcher, matcher platforms.Matcher) error {
 	children, err := images.Children(ctx, &imageContentProvider{sourceFetcher}, fixupInfo.resolvedDescriptor)
 	if err != nil {
 		return err
@@ -242,7 +365,7 @@ func fixupPlatform(ctx context.Context, cfg fixupConfig, baseImage *bundle.BaseI
 			return nil
 		}
 	}
-	return fmt.Errorf("no image found for platform %q in %q", cfg.platform, fixupInfo.sourceRef)
+	return fmt.Errorf("no image found for platform %q in %q", matcher, fixupInfo.sourceRef)
 
 }
 
