@@ -9,13 +9,11 @@ import (
 	"testing"
 
 	"github.com/containerd/containerd/images"
+	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes"
 	"github.com/deislabs/cnab-go/bundle"
-	"github.com/docker/distribution"
-	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
-	ocischema "github.com/opencontainers/image-spec/specs-go"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"gotest.tools/assert"
 )
@@ -50,13 +48,116 @@ func TestFixupPlatformShortPaths(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.NilError(t, fixupPlatform(context.Background(), fixupConfig{platform: c.platform}, nil, &imageFixupInfo{
+			var filter platforms.Matcher
+			if c.platform != "" {
+				filter = platforms.NewMatcher(platforms.MustParse(c.platform))
+			}
+			assert.NilError(t, fixupPlatforms(context.Background(), &bundle.BaseImage{}, &imageFixupInfo{
 				resolvedDescriptor: ocischemav1.Descriptor{
 					MediaType: c.mediaType,
 				},
-			}, nil))
+			}, nil, filter))
 		})
 	}
+}
+
+func TestFixupPlatforms(t *testing.T) {
+	cases := []struct {
+		name           string
+		manifest       *testManifest
+		filter         []string
+		expectedResult *testManifest
+		expectedError  string
+	}{
+		{
+			name:           "single-filter",
+			manifest:       newTestManifest("linux/amd64", "windows/amd64"),
+			filter:         []string{"linux/amd64"},
+			expectedResult: newTestManifest("linux/amd64"),
+		},
+		{
+			name:           "multi-filter",
+			manifest:       newTestManifest("linux/amd64", "windows/amd64", "linux/arm64"),
+			filter:         []string{"linux/amd64", "linux/arm64"},
+			expectedResult: newTestManifest("linux/amd64", "linux/arm64"),
+		},
+
+		{
+			name:          "no-match",
+			manifest:      newTestManifest("linux/amd64", "windows/amd64"),
+			filter:        []string{"linux/arm64"},
+			expectedError: `no descriptor matching the platform filter found in "docker.io/docker/test@sha256:4ff4130e3c087b3dd1ce3d7e9d29316e707c0a793783aa76380a14c1dba9b536"`,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			plats, err := toPlatforms(c.filter)
+			assert.NilError(t, err)
+			filter := platforms.Any(plats...)
+			sourceBytes, err := json.Marshal(c.manifest)
+			assert.NilError(t, err)
+			sourceDigest := digest.FromBytes(sourceBytes)
+			sourceRepo, err := reference.ParseNormalizedNamed("docker/test")
+			assert.NilError(t, err)
+			targetRepo, err := reference.ParseNormalizedNamed("docker/target")
+			assert.NilError(t, err)
+			sourceRef, err := reference.WithDigest(sourceRepo, sourceDigest)
+			assert.NilError(t, err)
+			bi := &bundle.BaseImage{
+				Image: sourceRef.String(),
+			}
+			fixupInfo := &imageFixupInfo{
+				resolvedDescriptor: ocischemav1.Descriptor{
+					Digest:    sourceDigest,
+					Size:      int64(len(sourceBytes)),
+					MediaType: ocischemav1.MediaTypeImageIndex,
+				},
+				targetRepo: targetRepo,
+				sourceRef:  sourceRef,
+			}
+			sourceFetcher := newSourceFetcherWithLocalData(bytesFetcher(sourceBytes))
+			err = fixupPlatforms(context.Background(), bi, fixupInfo, sourceFetcher, filter)
+			if c.expectedError != "" {
+				assert.ErrorContains(t, err, c.expectedError)
+				return
+			}
+			assert.NilError(t, err)
+			assert.Check(t, bi.Image != sourceRef.String())
+			assert.Check(t, fixupInfo.resolvedDescriptor.Digest != sourceDigest)
+			resolvedReader, err := sourceFetcher.Fetch(context.Background(), fixupInfo.resolvedDescriptor)
+			assert.NilError(t, err)
+			defer resolvedReader.Close()
+			resolvedBytes, err := ioutil.ReadAll(resolvedReader)
+			assert.NilError(t, err)
+			var resolvedManifest testManifest
+			assert.NilError(t, json.Unmarshal(resolvedBytes, &resolvedManifest))
+			assert.DeepEqual(t, &resolvedManifest, c.expectedResult)
+		})
+	}
+}
+
+type testManifest struct {
+	Manifests []testDescriptor `json:"manifests"`
+	Foo       string           `json:"foo"`
+}
+
+type testDescriptor struct {
+	Platform *ocischemav1.Platform `json:"platform,omitempty"`
+	Bar      string                `json:"bar"`
+}
+
+func newTestManifest(plats ...string) *testManifest {
+	m := &testManifest{
+		Foo: "bar",
+	}
+	for _, p := range plats {
+		plat := platforms.MustParse(p)
+		m.Manifests = append(m.Manifests, testDescriptor{
+			Bar:      "baz",
+			Platform: &plat,
+		})
+	}
+	return m
 }
 
 type fetchSetup struct {
@@ -69,131 +170,4 @@ type bytesFetcher []byte
 func (f bytesFetcher) Fetch(_ context.Context, _ ocischemav1.Descriptor) (io.ReadCloser, error) {
 	reader := bytes.NewReader(f)
 	return ioutil.NopCloser(reader), nil
-}
-
-func createFetchSetup(t *testing.T, ociFormat bool, descriptors ...ocischemav1.Descriptor) fetchSetup {
-	t.Helper()
-	var (
-		rootManifest []byte
-		mediaType    string
-	)
-	if ociFormat {
-		m := ocischemav1.Index{
-			Versioned: ocischema.Versioned{SchemaVersion: 2},
-			Manifests: descriptors,
-		}
-		bytes, err := json.Marshal(&m)
-		assert.NilError(t, err)
-		rootManifest = bytes
-		mediaType = ocischemav1.MediaTypeImageIndex
-	} else {
-		dockerDescriptors := make([]manifestlist.ManifestDescriptor, len(descriptors))
-		for ix, descriptor := range descriptors {
-			dockerDesc := manifestlist.ManifestDescriptor{
-				Descriptor: distribution.Descriptor{
-					MediaType: descriptor.MediaType,
-					Size:      descriptor.Size,
-					Digest:    descriptor.Digest,
-				},
-			}
-			if descriptor.Platform != nil {
-				dockerDesc.Platform = manifestlist.PlatformSpec{
-					Architecture: descriptor.Platform.Architecture,
-					OS:           descriptor.Platform.OS,
-				}
-			}
-			dockerDescriptors[ix] = dockerDesc
-		}
-		m, err := manifestlist.FromDescriptors(dockerDescriptors)
-		assert.NilError(t, err)
-		bytes, err := m.MarshalJSON()
-		assert.NilError(t, err)
-		rootManifest = bytes
-		mediaType = images.MediaTypeDockerSchema2ManifestList
-	}
-
-	rootDescriptor := ocischemav1.Descriptor{
-		Digest:    digest.FromBytes(rootManifest),
-		MediaType: mediaType,
-		Size:      int64(len(rootManifest)),
-	}
-	return fetchSetup{
-		descriptor: rootDescriptor,
-		fetcher:    bytesFetcher(rootManifest),
-	}
-}
-
-func TestFixupPlatformMultiArch(t *testing.T) {
-	linuxAmd64Descriptor := ocischemav1.Descriptor{
-		Digest:    digest.FromString("linux/amd64"),
-		MediaType: ocischemav1.MediaTypeImageManifest,
-		Platform: &ocischemav1.Platform{
-			Architecture: "amd64",
-			OS:           "linux",
-		},
-	}
-	linuxArm64Descriptor := ocischemav1.Descriptor{
-		Digest:    digest.FromString("linux/arm64"),
-		MediaType: ocischemav1.MediaTypeImageManifest,
-		Platform: &ocischemav1.Platform{
-			Architecture: "arm64",
-			OS:           "linux",
-		},
-	}
-	noPlatDescriptor := ocischemav1.Descriptor{
-		Digest:    digest.FromString("noplat"),
-		MediaType: ocischemav1.MediaTypeImageManifest,
-	}
-	cases := []struct {
-		name               string
-		platform           string
-		fetchSetup         fetchSetup
-		expectedDescriptor ocischemav1.Descriptor
-		expectedError      string
-	}{
-		{
-			name:               "match-ociindex",
-			platform:           "linux/amd64",
-			fetchSetup:         createFetchSetup(t, true, noPlatDescriptor, linuxArm64Descriptor, linuxAmd64Descriptor),
-			expectedDescriptor: linuxAmd64Descriptor,
-		},
-		{
-			name:               "match-manifestlist",
-			platform:           "linux/amd64",
-			fetchSetup:         createFetchSetup(t, false, noPlatDescriptor, linuxArm64Descriptor, linuxAmd64Descriptor),
-			expectedDescriptor: linuxAmd64Descriptor,
-		},
-		{
-			name:          "no-match-ociindex",
-			platform:      "windows/amd64",
-			fetchSetup:    createFetchSetup(t, true, noPlatDescriptor, linuxArm64Descriptor, linuxAmd64Descriptor),
-			expectedError: `no image found for platform "windows/amd64" in "docker.io/library/somerepo@sha256:51ae099fc17b7c56dc5e0b0a410cfa48928995776fa4b419cbfd4dca5605a85b"`,
-		},
-		{
-			name:          "no-match-manifestlist",
-			platform:      "windows/amd64",
-			fetchSetup:    createFetchSetup(t, false, noPlatDescriptor, linuxArm64Descriptor, linuxAmd64Descriptor),
-			expectedError: `no image found for platform "windows/amd64" in "docker.io/library/somerepo@sha256:8cc1363b2109e9c3e7b9b6e728669eb42eb25b09f8351d87236dda7cc26c6891"`,
-		},
-	}
-	targetRepo, err := reference.ParseNormalizedNamed("somerepo")
-	assert.NilError(t, err)
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			sourceRef, err := reference.WithDigest(targetRepo, c.fetchSetup.descriptor.Digest)
-			assert.NilError(t, err)
-			baseImage := &bundle.BaseImage{}
-			fixupInfo := &imageFixupInfo{resolvedDescriptor: c.fetchSetup.descriptor, targetRepo: targetRepo, sourceRef: sourceRef}
-			err = fixupPlatform(context.Background(), fixupConfig{platform: c.platform}, baseImage, fixupInfo, c.fetchSetup.fetcher)
-			if c.expectedError != "" {
-				assert.ErrorContains(t, err, c.expectedError)
-				return
-			}
-			assert.NilError(t, err)
-			assert.DeepEqual(t, fixupInfo.resolvedDescriptor, c.expectedDescriptor)
-			expectedImage, err := reference.WithDigest(targetRepo, c.expectedDescriptor.Digest)
-			assert.NilError(t, err)
-			assert.Equal(t, expectedImage.String(), baseImage.Image)
-		})
-	}
 }
