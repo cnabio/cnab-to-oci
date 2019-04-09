@@ -84,12 +84,13 @@
   revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
 
 [[projects]]
-  digest = "1:a3fb9b04b18e11842fdcb83fe3cdadebeee5adeee321f1048d61593345439491"
+  digest = "1:af0babe595fd909d91ceb00ced5324f1fe964927dd12745db00ef1738771b853"
   name = "github.com/docker/distribution"
   packages = [
     ".",
     "digestset",
     "manifest",
+    "manifest/manifestlist",
     "manifest/schema2",
     "metrics",
     "reference",
@@ -106,7 +107,7 @@
   revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
 
 [[projects]]
-  digest = "1:f4ad803466fb70bc85d73f53aa3e7ac5809fed2282dc0bd682011433de557090"
+  digest = "1:f6e77103fc4af8cad88aa1b08b7e45dbf32a0b69ada2d598712ea09bf164119b"
   name = "github.com/docker/docker"
   packages = [
     "api/types",
@@ -412,7 +413,7 @@
   version = "v1.19.1"
 
 [[projects]]
-  digest = "1:9d7d5988129436e49ee34d17bf0229065f9c45e6fc85cad160464bd488dcacca"
+  digest = "1:9be45fef1734baa90b8201fa238b4c21a8d6478c278bf22cb7a76eb8abb6156f"
   name = "gotest.tools"
   packages = [
     "assert",
@@ -436,6 +437,7 @@
     "github.com/containerd/containerd/content",
     "github.com/containerd/containerd/errdefs",
     "github.com/containerd/containerd/images",
+    "github.com/containerd/containerd/platforms",
     "github.com/containerd/containerd/reference",
     "github.com/containerd/containerd/remotes",
     "github.com/containerd/containerd/remotes/docker",
@@ -444,6 +446,7 @@
     "github.com/docker/cli/cli/config/configfile",
     "github.com/docker/cli/opts",
     "github.com/docker/distribution",
+    "github.com/docker/distribution/manifest/manifestlist",
     "github.com/docker/distribution/manifest/schema2",
     "github.com/docker/distribution/reference",
     "github.com/docker/distribution/registry/client/auth",
