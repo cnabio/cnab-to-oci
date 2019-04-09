@@ -91,9 +91,12 @@ func TestFixupPlatforms(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			// parse filter
 			plats, err := toPlatforms(c.filter)
 			assert.NilError(t, err)
 			filter := platforms.Any(plats...)
+
+			// setup fixupinfo, baseImage
 			sourceBytes, err := json.Marshal(c.manifest)
 			assert.NilError(t, err)
 			sourceDigest := digest.FromBytes(sourceBytes)
@@ -115,15 +118,24 @@ func TestFixupPlatforms(t *testing.T) {
 				targetRepo: targetRepo,
 				sourceRef:  sourceRef,
 			}
+
+			// setup source fetcher
 			sourceFetcher := newSourceFetcherWithLocalData(bytesFetcher(sourceBytes))
+
+			// fixup
 			err = fixupPlatforms(context.Background(), bi, fixupInfo, sourceFetcher, filter)
 			if c.expectedError != "" {
 				assert.ErrorContains(t, err, c.expectedError)
 				return
 			}
 			assert.NilError(t, err)
+
+			// baseImage.Image should have changed
 			assert.Check(t, bi.Image != sourceRef.String())
+			// resolved digest should have changed
 			assert.Check(t, fixupInfo.resolvedDescriptor.Digest != sourceDigest)
+
+			// parsing back the resolved manifest and making sure extra fields are still there
 			resolvedReader, err := sourceFetcher.Fetch(context.Background(), fixupInfo.resolvedDescriptor)
 			assert.NilError(t, err)
 			defer resolvedReader.Close()

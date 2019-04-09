@@ -46,8 +46,8 @@ func (cfg *fixupConfig) complete() error {
 	return nil
 }
 
-// WithInovcationImagePlatforms use filters platforms for an invocation image
-func WithInovcationImagePlatforms(supportedPlatforms []string) FixupOption {
+// WithInvocationImagePlatforms use filters platforms for an invocation image
+func WithInvocationImagePlatforms(supportedPlatforms []string) FixupOption {
 	return func(cfg *fixupConfig) error {
 		if len(supportedPlatforms) == 0 {
 			return nil
@@ -298,78 +298,6 @@ func fixupPlatforms(ctx context.Context, baseImage *bundle.BaseImage, fixupInfo 
 		return err
 	}
 	baseImage.Image = newRef.String()
-	return nil
-}
-
-type typelessManifestList struct {
-	Manifests []typelessDescriptor
-	extras    map[string]json.RawMessage
-}
-
-func (m *typelessManifestList) MarshalJSON() ([]byte, error) {
-	data := map[string]json.RawMessage{}
-	for k, v := range m.extras {
-		data[k] = v
-	}
-	if len(m.Manifests) != 0 {
-		manifestsJSON, err := json.Marshal(m.Manifests)
-		if err != nil {
-			return nil, err
-		}
-		data["manifests"] = json.RawMessage(manifestsJSON)
-	}
-	return json.Marshal(data)
-}
-
-func (m *typelessManifestList) UnmarshalJSON(source []byte) error {
-	var data map[string]json.RawMessage
-	if err := json.Unmarshal(source, &data); err != nil {
-		return err
-	}
-	if manifestsJSON, ok := data["manifests"]; ok {
-		if err := json.Unmarshal(manifestsJSON, &m.Manifests); err != nil {
-			return err
-		}
-		delete(data, "manifests")
-	}
-	m.extras = data
-	return nil
-}
-
-type typelessDescriptor struct {
-	Platform *ocischemav1.Platform
-	extras   map[string]json.RawMessage
-}
-
-func (d *typelessDescriptor) MarshalJSON() ([]byte, error) {
-	data := map[string]json.RawMessage{}
-	for k, v := range d.extras {
-		data[k] = v
-	}
-	if d.Platform != nil {
-		platJSON, err := json.Marshal(d.Platform)
-		if err != nil {
-			return nil, err
-		}
-		data["platform"] = json.RawMessage(platJSON)
-	}
-	return json.Marshal(data)
-}
-
-func (d *typelessDescriptor) UnmarshalJSON(source []byte) error {
-	var data map[string]json.RawMessage
-	if err := json.Unmarshal(source, &data); err != nil {
-		return err
-	}
-	if platJSON, ok := data["platform"]; ok {
-		var plat ocischemav1.Platform
-		if err := json.Unmarshal(platJSON, &plat); err != nil {
-			return err
-		}
-		d.Platform = &plat
-		delete(data, "platform")
-	}
-	d.extras = data
 	return nil
 }
 

@@ -61,7 +61,7 @@ func runPush(opts pushOptions) error {
 	}
 
 	err = remotes.FixupBundle(context.Background(), &b, ref, resolverConfig, remotes.WithEventCallback(displayEvent),
-		remotes.WithInovcationImagePlatforms(opts.invocationPlatforms),
+		remotes.WithInvocationImagePlatforms(opts.invocationPlatforms),
 		remotes.WithComponentImagePlatforms(opts.componentPlatforms))
 	if err != nil {
 		return err
