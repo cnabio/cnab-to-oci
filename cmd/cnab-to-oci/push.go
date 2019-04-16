@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/containerd/containerd/log"
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -66,7 +68,11 @@ func runPush(opts pushOptions) error {
 	if err != nil {
 		return err
 	}
-	d, err := remotes.Push(context.Background(), &b, ref, resolverConfig.Resolver, opts.allowFallbacks)
+	logger := logrus.New()
+	logger.SetLevel(logrus.FatalLevel)
+	logger.SetOutput(ioutil.Discard)
+	ctx := log.WithLogger(context.Background(), logrus.NewEntry(logger))
+	d, err := remotes.Push(ctx, &b, ref, resolverConfig.Resolver, opts.allowFallbacks)
 	if err != nil {
 		return err
 	}
