@@ -18,7 +18,7 @@ import (
 
 // Pull pulls a bundle from an OCI Image Index manifest
 func Pull(ctx context.Context, ref reference.Named, resolver remotes.Resolver) (*bundle.Bundle, error) {
-	index, err := getIndex(ctx, ref, resolver)
+	index, err := GetIndex(ctx, ref, resolver)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,8 @@ func Pull(ctx context.Context, ref reference.Named, resolver remotes.Resolver) (
 	return converter.ConvertOCIIndexToBundle(&index, &config, ref)
 }
 
-func getIndex(ctx context.Context, ref auth.Scope, resolver remotes.Resolver) (ocischemav1.Index, error) {
+// GetIndex returns the OCI index
+func GetIndex(ctx context.Context, ref auth.Scope, resolver remotes.Resolver) (ocischemav1.Index, error) {
 	resolvedRef, indexDescriptor, err := resolver.Resolve(ctx, ref.String())
 	if err != nil {
 		return ocischemav1.Index{}, fmt.Errorf("failed to resolve bundle manifest %q: %s", ref, err)

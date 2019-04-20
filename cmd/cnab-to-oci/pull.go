@@ -16,6 +16,7 @@ type pullOptions struct {
 	output             string
 	targetRef          string
 	insecureRegistries []string
+	raw                bool
 }
 
 func pullCmd() *cobra.Command {
@@ -30,8 +31,9 @@ func pullCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.output, "output", "o", "pulled.json", "output file")
+	cmd.Flags().StringVarP(&opts.output, "output", "o", "pulled.json", "Output file")
 	cmd.Flags().StringSliceVar(&opts.insecureRegistries, "insecure-registries", nil, "Use plain HTTP for those registries")
+	cmd.Flags().BoolVarP(&opts.raw, "raw", "", false, "If true, pull and write the raw manifest from the registry")
 	return cmd
 }
 
@@ -40,6 +42,20 @@ func runPull(opts pullOptions) error {
 	if err != nil {
 		return err
 	}
+
+	if opts.raw {
+		index, err := remotes.GetIndex(context.Background(), ref, createResolver(opts.insecureRegistries).Resolver)
+		if err != nil {
+			return err
+		}
+
+		bytes, err := json.MarshalIndent(index, "", "\t")
+		if err != nil {
+			return err
+		}
+		return ioutil.WriteFile(opts.output, bytes, 0644)
+	}
+
 	b, err := remotes.Pull(context.Background(), ref, createResolver(opts.insecureRegistries).Resolver)
 	if err != nil {
 		return err
