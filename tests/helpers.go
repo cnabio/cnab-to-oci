@@ -56,12 +56,15 @@ func MakeTestBundle() *bundle.Bundle {
 			"param1": {
 				AllowedValues: []interface{}{"value1", true, float64(1)},
 				DataType:      "type",
-				DefaultValue:  "hello",
+				Default:       "hello",
 				Destination: &bundle.Location{
 					EnvironmentVariable: "env_var",
 					Path:                "/some/path",
 				},
 			},
+		},
+		Custom: map[string]interface{}{
+			"my-key": "my-value",
 		},
 		Version: "0.1.0",
 	}

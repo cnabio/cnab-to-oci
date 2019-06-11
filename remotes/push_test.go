@@ -26,7 +26,7 @@ const (
   "parameters": {
     "param1": {
       "type": "type",
-      "defaultValue": "hello",
+      "default": "hello",
       "allowedValues": [
         "value1",
         true,
@@ -43,6 +43,9 @@ const (
       "path": "/some/path",
       "env": "env-var"
     }
+  },
+  "custom": {
+    "my-key": "my-value"
   }
 }`
 
@@ -51,7 +54,7 @@ const (
   "manifests": [
     {
       "mediaType":"application/vnd.oci.image.manifest.v1+json",
-      "digest":"sha256:5916f8d22b2bd25dd046cc23f275257b0a4e5fe14655c6ffc89618d646a7dd07",
+      "digest":"sha256:5f21ad94206953d5778b52e9efc804f335c5cbe743f99712ee668ecf58120fa0",
       "size":188,
       "annotations":{
         "io.cnab.manifest.type":"config"
@@ -147,7 +150,7 @@ func ExamplePush() {
 	// Output:
 	// {
 	//   "mediaType": "application/vnd.oci.image.index.v1+json",
-	//   "digest": "sha256:4c510aef87d55a8b5b456a5c82d799472597e3440ea423756c1c2e711c9a1905",
+	//   "digest": "sha256:d91edcf22a349a2d19e58da3b4c893e4a27188fb30f14dbef232c89821dcd76e",
 	//   "size": 1217
 	// }
 }
