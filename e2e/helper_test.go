@@ -38,5 +38,5 @@ func (c *Container) Stop(t *testing.T) {
 // GetAddress returns the host:port this container listens on
 func (c *Container) GetAddress(t *testing.T) string {
 	result := icmd.RunCommand("docker", "port", c.container, strconv.Itoa(c.privatePort)).Assert(t, icmd.Success)
-	return fmt.Sprintf("localhost:%v", strings.Trim(strings.Split(result.Stdout(), ":")[1], " \r\n"))
+	return fmt.Sprintf("127.0.0.1:%v", strings.Trim(strings.Split(result.Stdout(), ":")[1], " \r\n"))
 }
