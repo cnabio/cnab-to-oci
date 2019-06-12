@@ -21,7 +21,7 @@ func TestPushAndPullCNAB(t *testing.T) {
 	registry := r.GetAddress(t)
 
 	// Create a CNAB bundle from a Docker Application Package
-	runCmd(t, icmd.Command("docker-app", "bundle", "/examples/hello-world/hello-world.dockerapp",
+	runCmd(t, icmd.Command("docker-app", "bundle", "/examples/hello-world/example-hello-world.dockerapp",
 		"--invocation-image", "hello-world:0.1.0-invoc",
 		"--namespace", registry+"/e2e",
 		"--out", dir.Join("bundle.json")))
