@@ -1,0 +1,97 @@
+properties([buildDiscarder(logRotator(numToKeepStr: '20'))])
+
+pipeline {
+    agent {
+        label 'ubuntu-1804'
+    }
+
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    environment {
+        TAG = tag()
+        BUILD_TAG = tag()
+    }
+
+    stages {
+        stage('Build') {
+            parallel {
+                stage("Validate") {
+                    agent {
+                        label 'ubuntu-1804'
+                    }
+                    steps {
+                        dir('src/github.com/docker/cnab-to-oci') {
+                            checkout scm
+                            ansiColor('xterm') {
+                                sh 'make -f docker.Makefile lint'
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            dir('src/github.com/docker/cnab-to-oci') {
+                                sh 'make -f docker.Makefile clean-images'
+                            }
+                            deleteDir()
+                        }
+                    }
+                }
+                stage("Binaries") {
+                    agent {
+                        label 'ubuntu-1804'
+                    }
+                    steps  {
+                        dir('src/github.com/docker/cnab-to-oci') {
+                            checkout scm
+                            ansiColor('xterm') {
+                                sh 'make -f docker.Makefile build test-unit'
+                            }
+                            dir('bin') {
+                                stash name: 'binaries'
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            dir('src/github.com/docker/cnab-to-oci') {
+                                sh 'make -f docker.Makefile clean-images'
+                            }
+                            deleteDir()
+                        }
+                    }
+                }
+            }
+        }
+        stage('Test') {
+            agent {
+                label 'ubuntu-1804'
+            }
+            steps {
+                dir('src/github.com/docker/cnab-to-oci') {
+                    checkout scm
+                    ansiColor('xterm') {
+                        sh 'make -f docker.Makefile test-e2e'
+                    }
+                }
+            }
+            post {
+                always {
+                    dir('src/github.com/docker/cnab-to-oci') {
+                        sh 'make -f docker.Makefile clean-images'
+                    }
+                    deleteDir()
+                }
+            }
+        }
+    }
+}
+
+def tag() {
+    if (env.TAG_NAME != null) {
+        return env.TAG_NAME 
+    } else {
+        return env.BUILD_TAG
+    }
+}
