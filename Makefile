@@ -1,41 +1,7 @@
+include vars.mk
+
 .DEFAULT_GOAL := all
 SHELL:=/bin/bash
-
-PKG_NAME := github.com/docker/cnab-to-oci
-
-EXEC_EXT :=
-ifeq ($(OS),Windows_NT)
-  EXEC_EXT := .exe
-endif
-
-ifeq ($(TAG),)
-  TAG := $(shell git describe --always --dirty 2> /dev/null)
-endif
-ifeq ($(COMMIT),)
-  COMMIT := $(shell git rev-parse --short HEAD 2> /dev/null)
-endif
-
-ifeq ($(BUILDTIME),)
-  BUILDTIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
-endif
-ifeq ($(BUILDTIME),)
-  BUILDTIME := unknown
-  $(warning unable to set BUILDTIME. Set the value manually)
-endif
-
-LDFLAGS := "-s -w \
-  -X $(PKG_NAME)/internal.GitCommit=$(COMMIT)     \
-  -X $(PKG_NAME)/internal.Version=$(TAG)          \
-  -X $(PKG_NAME)/internal.BuildTime=$(BUILDTIME)"
-
-BUILD_ARGS := \
-  --build-arg BUILDTIME=$(BUILDTIME) \
-  --build-arg COMMIT=$(COMMIT)       \
-  --build-arg TAG=$(TAG)
-
-GO_BUILD := CGO_ENABLED=0 go build -ldflags=$(LDFLAGS)
-GO_TEST := CGO_ENABLED=0 go test -ldflags=$(LDFLAGS) -failfast
-GO_TEST_RACE := go test -ldflags=$(LDFLAGS) -failfast -race
 
 all: build test
 
@@ -51,11 +17,16 @@ get-tools:
 	gometalinter --install
 
 # Default build
-build: bin/cnab-to-oci
+build: bin/$(BIN_NAME)
 
-bin/%: cmd/% check_go_env
+cross: bin/$(BIN_NAME)-linux bin/$(BIN_NAME)-darwin bin/$(BIN_NAME)-windows.exe
+
+bin/$(BIN_NAME): cmd/$(BIN_NAME) check_go_env
 	$(GO_BUILD) -o $@$(EXEC_EXT) ./$<
 
+bin/$(BIN_NAME)-%.exe bin/$(BIN_NAME)-%: cmd/$(BIN_NAME) check_go_env
+	GOOS=$* $(GO_BUILD) -o $@ ./$<
+	
 install:
 	pushd cmd/cnab-to-oci && go install && popd
 
