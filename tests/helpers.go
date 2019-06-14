@@ -24,12 +24,12 @@ func MakeTestBundle() *bundle.Bundle {
 		Description: "description",
 		Images: map[string]bundle.Image{
 			"image-1": {
-				Description: "nginx:2.12",
 				BaseImage: bundle.BaseImage{
-					Image:     "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
-					ImageType: "oci",
-					MediaType: "application/vnd.oci.image.manifest.v1+json",
-					Size:      507,
+					Image:         "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
+					ImageType:     "oci",
+					MediaType:     "application/vnd.oci.image.manifest.v1+json",
+					OriginalImage: "nginx:2.12",
+					Size:          507,
 				},
 			},
 		},
