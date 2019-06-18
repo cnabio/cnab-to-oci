@@ -355,7 +355,6 @@ The following is an example of an OCI image index sent to the registry.
       "size": 507,
       "annotations": {
         "io.cnab.component.name": "image-1",
-        "io.cnab.component.original_name": "nginx:2.12",
         "io.cnab.manifest.type": "component"
       }
     }

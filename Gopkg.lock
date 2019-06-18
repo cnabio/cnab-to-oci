@@ -13,6 +13,14 @@
   revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
 
 [[projects]]
+  digest = "1:55388fd080150b9a072912f97b1f5891eb0b50df43401f8b75fb4273d3fec9fc"
+  name = "github.com/Masterminds/semver"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c7af12943936e8c39859482e61f0574c2fd7fc75"
+  version = "v1.4.2"
+
+[[projects]]
   digest = "1:f9ae348e1f793dcf9ed930ed47136a67343dbd6809c5c91391322267f4476892"
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
@@ -64,12 +72,15 @@
   revision = "004b46473808b3e7a4a3049c20e4376c91eb966d"
 
 [[projects]]
-  branch = "master"
-  digest = "1:6fc5f0869d45a539167f86de6abd639bf609af0f7cc6e4bcb7f478bb26fd3ef2"
+  digest = "1:f9c1de670a68b3896295f5ed77f46cfacf24706a1e5c56afac1e4be63ccb4afa"
   name = "github.com/deislabs/cnab-go"
-  packages = ["bundle"]
+  packages = [
+    "bundle",
+    "bundle/definition",
+  ]
   pruneopts = "UT"
-  revision = "83e9f9815137410102c256af79eee9d76e8ef320"
+  revision = "62eeee4c90dac8e06004f412fe1fd86d84181ff5"
+  version = "v0.1.0-beta1"
 
 [[projects]]
   digest = "1:982e3778851f5bb802c164c0baffa67eb7447b189211a08dd18acaa03b4d30c0"
@@ -325,6 +336,22 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "af7bedc223fba51343f25a6fa7aba84355d0357a"
+
+[[projects]]
+  digest = "1:d235e49bf6cae4fe6a794352b5e74656f9e3c15b1f6b097b0382865414110e2e"
+  name = "github.com/qri-io/jsonpointer"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "43be820608971e680b60469cfc7cc0e2e75fd4ef"
+  version = "v0.1.0"
+
+[[projects]]
+  digest = "1:86a61771e3006eeb78ab8a7942c3a9dbae1aca96ab48df505357a6a93f7bc3fa"
+  name = "github.com/qri-io/jsonschema"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "b244d4b99401d163bd9e382fd58698794259d091"
+  version = "v0.1.1"
 
 [[projects]]
   digest = "1:e4c72127d910a96daf869a44f3dd563b86dbe6931a172863a0e99c5ff04b59e4"

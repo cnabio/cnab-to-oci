@@ -23,18 +23,29 @@ const (
       "modifies": true
     }
   },
-  "parameters": {
-    "param1": {
-      "type": "type",
-      "default": "hello",
-      "allowedValues": [
-        "value1",
-        true,
-        1
+  "definitions": {
+    "param1Type": {
+     "default": "hello",
+      "enum": [
+          "value1",
+          true,
+          1
       ],
-      "destination": {
-        "path": "/some/path",
-        "env": "env_var"
+      "type": [
+          "string", 
+          "boolean", 
+          "number"
+      ]
+    }
+  },
+  "parameters": {
+    "fields": {
+      "param1": {
+        "definition": "param1Type",
+        "destination": {
+          "path": "/some/path",
+          "env": "env_var"
+        }
       }
     }
   },
@@ -54,7 +65,7 @@ const (
   "manifests": [
     {
       "mediaType":"application/vnd.oci.image.manifest.v1+json",
-      "digest":"sha256:5f21ad94206953d5778b52e9efc804f335c5cbe743f99712ee668ecf58120fa0",
+      "digest":"sha256:dd0b15031d5843d61c8a9911bf2fd7180d4baceef674ac73b07edb0699ab73a8",
       "size":188,
       "annotations":{
         "io.cnab.manifest.type":"config"
@@ -74,7 +85,6 @@ const (
       "size": 507,
       "annotations": {
         "io.cnab.component.name": "image-1",
-        "io.cnab.component.original_name": "nginx:2.12",
         "io.cnab.manifest.type": "component"
       }
     }
@@ -150,8 +160,8 @@ func ExamplePush() {
 	// Output:
 	// {
 	//   "mediaType": "application/vnd.oci.image.index.v1+json",
-	//   "digest": "sha256:d91edcf22a349a2d19e58da3b4c893e4a27188fb30f14dbef232c89821dcd76e",
-	//   "size": 1217
+	//   "digest": "sha256:afe79dfab78e26a121b860cec7dec5cf4ad5357e5c38dea32eab848a1f698491",
+	//   "size": 1170
 	// }
 }
 
