@@ -83,7 +83,7 @@ func ExamplePull() {
 
 	resultBundle.WriteTo(os.Stdout)
 	// Output:
-	//{"actions":{"action-1":{"modifies":true}},"credentials":{"cred-1":{"env":"env-var","path":"/some/path"}},"description":"description","images":{"image-1":{"description":"","image":"my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341","imageType":"oci","mediaType":"application/vnd.oci.image.manifest.v1+json","originalImage":"nginx:2.12","size":507}},"invocationImages":[{"image":"my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341","imageType":"docker","mediaType":"application/vnd.docker.distribution.manifest.v2+json","size":506}],"keywords":["keyword1","keyword2"],"maintainers":[{"email":"docker@docker.com","name":"docker","url":"docker.com"}],"name":"my-app","parameters":{"param1":{"allowedValues":["value1",true,1],"default":"hello","destination":{"env":"env_var","path":"/some/path"},"metadata":{},"type":"type"}},"version":"0.1.0"}
+	//{"actions":{"action-1":{"modifies":true}},"credentials":{"cred-1":{"env":"env-var","path":"/some/path"}},"definitions":{"param1Type":{"default":"hello","enum":["value1",true,1],"type":["string","boolean","number"]}},"description":"description","images":{"image-1":{"description":"","image":"my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341","imageType":"oci","mediaType":"application/vnd.oci.image.manifest.v1+json","size":507}},"invocationImages":[{"image":"my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341","imageType":"docker","mediaType":"application/vnd.docker.distribution.manifest.v2+json","size":506}],"keywords":["keyword1","keyword2"],"maintainers":[{"email":"docker@docker.com","name":"docker","url":"docker.com"}],"name":"my-app","parameters":{"fields":{"param1":{"definition":"param1Type","destination":{"env":"env_var","path":"/some/path"}}}},"schemaVersion":"","version":"0.1.0"}
 }
 
 const (
@@ -112,7 +112,6 @@ const (
       "size": 507,
       "annotations": {
         "io.cnab.component.name": "image-1",
-        "io.cnab.component.original_name": "nginx:2.12",
         "io.cnab.manifest.type": "component"
       }
     }
@@ -146,20 +145,29 @@ const (
       "modifies": true
     }
   },
-  "parameters": {
-    "param1": {
-      "type": "type",
-      "default": "hello",
-      "allowedValues": [
-        "value1",
-        true,
-        1
+  "definitions": {
+    "param1Type": {
+     "default": "hello",
+      "enum": [
+          "value1",
+          true,
+          1
       ],
-      "required": false,
-      "metadata": {},
-      "destination": {
-        "path": "/some/path",
-        "env": "env_var"
+      "type": [
+          "string", 
+          "boolean", 
+          "number"
+      ]
+    }
+  },
+  "parameters": {
+    "fields": {
+      "param1": {
+        "definition": "param1Type",
+        "destination": {
+          "path": "/some/path",
+          "env": "env_var"
+        }
       }
     }
   },

@@ -2,6 +2,7 @@ package tests
 
 import (
 	"github.com/deislabs/cnab-go/bundle"
+	"github.com/deislabs/cnab-go/bundle/definition"
 	"github.com/docker/distribution/manifest/schema2"
 	ocischema "github.com/opencontainers/image-spec/specs-go"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -15,21 +16,22 @@ func MakeTestBundle() *bundle.Bundle {
 				Modifies: true,
 			},
 		},
-		Credentials: map[string]bundle.Location{
+		Credentials: map[string]bundle.Credential{
 			"cred-1": {
-				EnvironmentVariable: "env-var",
-				Path:                "/some/path",
+				Location: bundle.Location{
+					EnvironmentVariable: "env-var",
+					Path:                "/some/path",
+				},
 			},
 		},
 		Description: "description",
 		Images: map[string]bundle.Image{
 			"image-1": {
 				BaseImage: bundle.BaseImage{
-					Image:         "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
-					ImageType:     "oci",
-					MediaType:     "application/vnd.oci.image.manifest.v1+json",
-					OriginalImage: "nginx:2.12",
-					Size:          507,
+					Image:     "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
+					ImageType: "oci",
+					MediaType: "application/vnd.oci.image.manifest.v1+json",
+					Size:      507,
 				},
 			},
 		},
@@ -52,14 +54,21 @@ func MakeTestBundle() *bundle.Bundle {
 			},
 		},
 		Name: "my-app",
-		Parameters: map[string]bundle.ParameterDefinition{
-			"param1": {
-				AllowedValues: []interface{}{"value1", true, float64(1)},
-				DataType:      "type",
-				Default:       "hello",
-				Destination: &bundle.Location{
-					EnvironmentVariable: "env_var",
-					Path:                "/some/path",
+		Definitions: map[string]*definition.Schema{
+			"param1Type": {
+				Enum:    []interface{}{"value1", true, float64(1)},
+				Type:    []interface{}{"string", "boolean", "number"},
+				Default: "hello",
+			},
+		},
+		Parameters: &bundle.ParametersDefinition{
+			Fields: map[string]bundle.ParameterDefinition{
+				"param1": {
+					Definition: "param1Type",
+					Destination: &bundle.Location{
+						EnvironmentVariable: "env_var",
+						Path:                "/some/path",
+					},
 				},
 			},
 		},
@@ -109,9 +118,8 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 				MediaType: "application/vnd.oci.image.manifest.v1+json",
 				Size:      507,
 				Annotations: map[string]string{
-					"io.cnab.manifest.type":           "component",
-					"io.cnab.component.name":          "image-1",
-					"io.cnab.component.original_name": "nginx:2.12",
+					"io.cnab.manifest.type":  "component",
+					"io.cnab.component.name": "image-1",
 				},
 			},
 		},
