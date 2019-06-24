@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/containerd/containerd/images"
 	"github.com/deislabs/cnab-go/bundle"
@@ -177,7 +178,9 @@ func makeManifests(b *bundle.Bundle, targetReference reference.Named, bundleConf
 		CNABDescriptorTypeAnnotation: CNABDescriptorTypeInvocation,
 	}
 	manifests = append(manifests, invocationImage)
-	for name, img := range b.Images {
+	images := makeSortedImages(b.Images)
+	for _, name := range images {
+		img := b.Images[name]
 		image, err := makeDescriptor(img.BaseImage, targetReference)
 		if err != nil {
 			return nil, fmt.Errorf("invalid image: %s", err)
@@ -189,6 +192,15 @@ func makeManifests(b *bundle.Bundle, targetReference reference.Named, bundleConf
 		manifests = append(manifests, image)
 	}
 	return manifests, nil
+}
+
+func makeSortedImages(images map[string]bundle.Image) []string {
+	var result []string
+	for k := range images {
+		result = append(result, k)
+	}
+	sort.Strings(result)
+	return result
 }
 
 func parseManifests(descriptors []ocischemav1.Descriptor, into *bundle.Bundle, originRepo reference.Named) error {
