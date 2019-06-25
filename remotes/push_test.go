@@ -32,8 +32,8 @@ const (
           1
       ],
       "type": [
-          "string", 
-          "boolean", 
+          "string",
+          "boolean",
           "number"
       ]
     }
@@ -77,6 +77,15 @@ const (
       "size": 506,
       "annotations": {
         "io.cnab.manifest.type": "invocation"
+      }
+    },
+    {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
+      "size": 507,
+      "annotations": {
+        "io.cnab.component.name": "another-image",
+        "io.cnab.manifest.type": "component"
       }
     },
     {
@@ -160,8 +169,8 @@ func ExamplePush() {
 	// Output:
 	// {
 	//   "mediaType": "application/vnd.oci.image.index.v1+json",
-	//   "digest": "sha256:afe79dfab78e26a121b860cec7dec5cf4ad5357e5c38dea32eab848a1f698491",
-	//   "size": 1170
+	//   "digest": "sha256:dc97d7daac08818c2361b30757d32e62b4326a85bcedcb22b8a5d45bf54d166d",
+	//   "size": 1416
 	// }
 }
 

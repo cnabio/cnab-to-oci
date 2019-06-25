@@ -34,6 +34,14 @@ func MakeTestBundle() *bundle.Bundle {
 					Size:      507,
 				},
 			},
+			"another-image": {
+				BaseImage: bundle.BaseImage{
+					Image:     "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
+					ImageType: "oci",
+					MediaType: "application/vnd.oci.image.manifest.v1+json",
+					Size:      507,
+				},
+			},
 		},
 		InvocationImages: []bundle.InvocationImage{
 			{
@@ -111,6 +119,15 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 				Size:      506,
 				Annotations: map[string]string{
 					"io.cnab.manifest.type": "invocation",
+				},
+			},
+			{
+				Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
+				MediaType: "application/vnd.oci.image.manifest.v1+json",
+				Size:      507,
+				Annotations: map[string]string{
+					"io.cnab.manifest.type":  "component",
+					"io.cnab.component.name": "another-image",
 				},
 			},
 			{
