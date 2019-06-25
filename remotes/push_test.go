@@ -101,8 +101,6 @@ const (
   "annotations": {
     "io.cnab.keywords": "[\"keyword1\",\"keyword2\"]",
     "io.cnab.runtime_version": "v1.0.0-WD",
-    "io.docker.app.format": "cnab",
-    "io.docker.type": "app",
     "org.opencontainers.artifactType": "application/vnd.cnab.manifest.v1",
     "org.opencontainers.image.authors": "[{\"name\":\"docker\",\"email\":\"docker@docker.com\",\"url\":\"docker.com\"}]",
     "org.opencontainers.image.description": "description",
@@ -169,8 +167,8 @@ func ExamplePush() {
 	// Output:
 	// {
 	//   "mediaType": "application/vnd.oci.image.index.v1+json",
-	//   "digest": "sha256:dc97d7daac08818c2361b30757d32e62b4326a85bcedcb22b8a5d45bf54d166d",
-	//   "size": 1416
+	//   "digest": "sha256:985dd1539e4c356625eb216eeab4353f994f42b2852c254a944cbcd5f2e457b8",
+	//   "size": 1363
 	// }
 }
 
