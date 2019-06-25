@@ -22,24 +22,9 @@ const ( // General values
 	OCIIndexSchemaVersion = 2
 )
 
-// Type aliases to clarify to which annotation the values belong
-type dockerAppFormatValue = string
-
-type dockerTypeValue = string
-
 type cnabDescriptorTypeValue = string
 
 const ( // Top Level annotations and values
-	// DockerAppFormatAnnotation is the top level annotation specifying the kind of the App Bundle
-	DockerAppFormatAnnotation = "io.docker.app.format"
-	// DockerAppFormatCNAB is the DockerAppFormatAnnotation value for CNAB
-	DockerAppFormatCNAB dockerAppFormatValue = "cnab"
-
-	// DockerTypeAnnotation is the annotation that designates the type of the application
-	DockerTypeAnnotation = "io.docker.type"
-	// DockerTypeApp is the value used to fill DockerTypeAnnotation when targeting a docker-app
-	DockerTypeApp dockerTypeValue = "app"
-
 	// CNABRuntimeVersionAnnotation is the top level annotation specifying the CNAB runtime version
 	CNABRuntimeVersionAnnotation = "io.cnab.runtime_version"
 	// CNABKeywordsAnnotation is the top level annotation specifying a list of keywords
@@ -114,12 +99,10 @@ func ConvertOCIIndexToBundle(ix *ocischemav1.Index, config *BundleConfig, origin
 
 func makeAnnotations(b *bundle.Bundle) (map[string]string, error) {
 	result := map[string]string{
-		DockerAppFormatAnnotation:         DockerAppFormatCNAB,
 		CNABRuntimeVersionAnnotation:      CNABVersion,
 		ocischemav1.AnnotationTitle:       b.Name,
 		ocischemav1.AnnotationVersion:     b.Version,
 		ocischemav1.AnnotationDescription: b.Description,
-		DockerTypeAnnotation:              DockerTypeApp,
 		ArtifactTypeAnnotation:            ArtifactTypeValue,
 	}
 	if b.Maintainers != nil {

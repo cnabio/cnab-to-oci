@@ -94,14 +94,12 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 			SchemaVersion: 2,
 		},
 		Annotations: map[string]string{
-			"io.docker.app.format":            "cnab",
 			"io.cnab.runtime_version":         "v1.0.0-WD",
 			ocischemav1.AnnotationTitle:       "my-app",
 			ocischemav1.AnnotationVersion:     "0.1.0",
 			ocischemav1.AnnotationDescription: "description",
 			ocischemav1.AnnotationAuthors:     `[{"name":"docker","email":"docker@docker.com","url":"docker.com"}]`,
 			"io.cnab.keywords":                `["keyword1","keyword2"]`,
-			"io.docker.type":                  "app",
 			"org.opencontainers.artifactType": "application/vnd.cnab.manifest.v1",
 		},
 		Manifests: []ocischemav1.Descriptor{
