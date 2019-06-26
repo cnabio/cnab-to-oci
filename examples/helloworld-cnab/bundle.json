@@ -1,4 +1,5 @@
 {
+  "schemaVersion": "v1.0.0-WD",
   "name": "helloworld",
   "version": "0.1.1",
   "description": "A short description of your bundle",

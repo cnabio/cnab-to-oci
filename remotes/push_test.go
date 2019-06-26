@@ -17,7 +17,7 @@ import (
 
 const (
 	expectedBundleConfig = `{
-  "schema_version": "v1.0.0-WD",
+  "schemaVersion": "v1.0.0-WD",
   "actions": {
     "action-1": {
       "modifies": true
@@ -65,7 +65,7 @@ const (
   "manifests": [
     {
       "mediaType":"application/vnd.oci.image.manifest.v1+json",
-      "digest":"sha256:dd0b15031d5843d61c8a9911bf2fd7180d4baceef674ac73b07edb0699ab73a8",
+      "digest":"sha256:0addd3e524bf3c92dfa6328f1158fd4a6143214ce64b00802972f1d3ee165dbe",
       "size":188,
       "annotations":{
         "io.cnab.manifest.type":"config"
@@ -167,7 +167,7 @@ func ExamplePush() {
 	// Output:
 	// {
 	//   "mediaType": "application/vnd.oci.image.index.v1+json",
-	//   "digest": "sha256:985dd1539e4c356625eb216eeab4353f994f42b2852c254a944cbcd5f2e457b8",
+	//   "digest": "sha256:b4ec5b6008592c0badea020ac7402797f13120fc11d7fe6c0f91b77a439d9d4c",
 	//   "size": 1363
 	// }
 }

@@ -85,4 +85,4 @@ format: get-tools
 lint: get-tools
 	gometalinter --config=gometalinter.json ./...
 
-.PHONY: all, get-tools, build, clean, test, test-unit, test-e2e, e2e-image, lint
+.PHONY: all get-tools build clean test test-unit test-e2e e2e-image lint

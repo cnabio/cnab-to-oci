@@ -1,0 +1,139 @@
+{
+	"schemaVersion": "v1.0.0-WD",
+	"name": "hello-world",
+	"version": "0.1.0",
+	"description": "Hello, World!",
+	"maintainers": [
+		{
+			"name": "user",
+			"email": "user@email.com"
+		}
+	],
+	"invocationImages": [
+		{
+			"imageType": "docker",
+			"image": "{{ .InvocationImage }}"
+		}
+	],
+	"images": {
+		"hello": {
+			"imageType": "docker",
+			"image": "{{ .ServiceImage }}"
+		}
+	},
+	"actions": {
+		"com.docker.app.inspect": {
+			"stateless": true
+		},
+		"com.docker.app.render": {
+			"stateless": true
+		},
+		"io.cnab.status": {}
+	},
+	"parameters": {
+		"fields": {
+			"com.docker.app.kubernetes-namespace": {
+				"definition": "com.docker.app.kubernetes-namespace",
+				"applyTo": [
+					"install",
+					"upgrade",
+					"uninstall",
+					"io.cnab.status"
+				],
+				"destination": {
+					"env": "DOCKER_KUBERNETES_NAMESPACE"
+				}
+			},
+			"com.docker.app.orchestrator": {
+				"definition": "com.docker.app.orchestrator",
+				"applyTo": [
+					"install",
+					"upgrade",
+					"uninstall",
+					"io.cnab.status"
+				],
+				"destination": {
+					"env": "DOCKER_STACK_ORCHESTRATOR"
+				}
+			},
+			"com.docker.app.render-format": {
+				"definition": "com.docker.app.render-format",
+				"applyTo": [
+					"com.docker.app.render"
+				],
+				"destination": {
+					"env": "DOCKER_RENDER_FORMAT"
+				}
+			},
+			"com.docker.app.share-registry-creds": {
+				"definition": "com.docker.app.share-registry-creds",
+				"destination": {
+					"env": "DOCKER_SHARE_REGISTRY_CREDS"
+				}
+			},
+			"port": {
+				"definition": "port",
+				"destination": {
+					"env": "docker_param1"
+				}
+			},
+			"text": {
+				"definition": "text",
+				"destination": {
+					"env": "docker_param2"
+				}
+			}
+		}
+	},
+	"credentials": {
+		"com.docker.app.registry-creds": {
+			"path": "/cnab/app/registry-creds.json"
+		},
+		"docker.context": {
+			"path": "/cnab/app/context.dockercontext"
+		}
+	},
+	"definitions": {
+		"com.docker.app.kubernetes-namespace": {
+			"default": "",
+			"description": "Namespace in which to deploy",
+			"title": "Namespace",
+			"type": "string"
+		},
+		"com.docker.app.orchestrator": {
+			"default": "",
+			"description": "Orchestrator on which to deploy",
+			"enum": [
+				"",
+				"swarm",
+				"kubernetes"
+			],
+			"title": "Orchestrator",
+			"type": "string"
+		},
+		"com.docker.app.render-format": {
+			"default": "yaml",
+			"description": "Output format for the render command",
+			"enum": [
+				"yaml",
+				"json"
+			],
+			"title": "Render format",
+			"type": "string"
+		},
+		"com.docker.app.share-registry-creds": {
+			"default": false,
+			"description": "Share registry credentials with the invocation image",
+			"title": "Share registry credentials",
+			"type": "boolean"
+		},
+		"port": {
+			"default": "8080",
+			"type": "string"
+		},
+		"text": {
+			"default": "Hello, World!",
+			"type": "string"
+		}
+	}
+}

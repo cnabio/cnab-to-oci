@@ -72,15 +72,15 @@
   revision = "004b46473808b3e7a4a3049c20e4376c91eb966d"
 
 [[projects]]
-  digest = "1:f9c1de670a68b3896295f5ed77f46cfacf24706a1e5c56afac1e4be63ccb4afa"
+  digest = "1:7f54abc3396e174a3bf19332e9be3af2992fe6efe08c4373348e65d41e3f2457"
   name = "github.com/deislabs/cnab-go"
   packages = [
     "bundle",
     "bundle/definition",
   ]
   pruneopts = "UT"
-  revision = "62eeee4c90dac8e06004f412fe1fd86d84181ff5"
-  version = "v0.1.0-beta1"
+  revision = "b8d6d13fdfc865b39cf29026ce169e6e709619dd"
+  version = "v0.1.2-beta1"
 
 [[projects]]
   digest = "1:982e3778851f5bb802c164c0baffa67eb7447b189211a08dd18acaa03b4d30c0"
@@ -469,6 +469,7 @@
     "github.com/containerd/containerd/remotes",
     "github.com/containerd/containerd/remotes/docker",
     "github.com/deislabs/cnab-go/bundle",
+    "github.com/deislabs/cnab-go/bundle/definition",
     "github.com/docker/cli/cli/config",
     "github.com/docker/cli/cli/config/configfile",
     "github.com/docker/cli/opts",

@@ -82,11 +82,12 @@ func ConvertBundleToOCIIndex(b *bundle.Bundle, targetRef reference.Named, bundle
 // ConvertOCIIndexToBundle converts an OCI index to a CNAB bundle representation
 func ConvertOCIIndexToBundle(ix *ocischemav1.Index, config *BundleConfig, originRepo reference.Named) (*bundle.Bundle, error) {
 	b := &bundle.Bundle{
-		Actions:     config.Actions,
-		Credentials: config.Credentials,
-		Definitions: config.Definitions,
-		Parameters:  config.Parameters,
-		Custom:      config.Custom,
+		SchemaVersion: CNABVersion,
+		Actions:       config.Actions,
+		Credentials:   config.Credentials,
+		Definitions:   config.Definitions,
+		Parameters:    config.Parameters,
+		Custom:        config.Custom,
 	}
 	if err := parseTopLevelAnnotations(ix.Annotations, b); err != nil {
 		return nil, err
@@ -99,7 +100,7 @@ func ConvertOCIIndexToBundle(ix *ocischemav1.Index, config *BundleConfig, origin
 
 func makeAnnotations(b *bundle.Bundle) (map[string]string, error) {
 	result := map[string]string{
-		CNABRuntimeVersionAnnotation:      CNABVersion,
+		CNABRuntimeVersionAnnotation:      b.SchemaVersion,
 		ocischemav1.AnnotationTitle:       b.Name,
 		ocischemav1.AnnotationVersion:     b.Version,
 		ocischemav1.AnnotationDescription: b.Description,
