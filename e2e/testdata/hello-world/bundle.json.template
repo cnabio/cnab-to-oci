@@ -1,0 +1,53 @@
+{
+	"schemaVersion": "v1.0.0-WD",
+	"name": "hello-world",
+	"version": "0.1.0",
+	"description": "Hello, World!",
+	"maintainers": [
+		{
+			"name": "user",
+			"email": "user@email.com"
+		}
+	],
+	"invocationImages": [
+		{
+			"imageType": "docker",
+			"image": "{{ .InvocationImage }}"
+		}
+	],
+	"images": {
+		"hello": {
+			"imageType": "docker",
+			"image": "{{ .ServiceImage }}"
+		}
+	},
+	"actions": {
+		"io.cnab.status": {}
+	},
+	"parameters": {
+		"fields": {
+			"port": {
+				"definition": "port",
+				"destination": {
+					"env": "PORT"
+				}
+			},
+			"text": {
+				"definition": "text",
+				"destination": {
+					"env": "HELLO_TEXT"
+				}
+			}
+		}
+	},
+	"definitions": {
+		"port": {
+			"default": "8080",
+			"type": "string"
+		},
+		"text": {
+			"default": "Hello, World!",
+			"type": "string"
+		}
+	}
+}

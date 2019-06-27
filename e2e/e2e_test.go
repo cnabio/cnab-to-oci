@@ -3,9 +3,12 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+	"text/template"
 
 	"gotest.tools/assert"
 	"gotest.tools/fs"
@@ -20,14 +23,40 @@ func TestPushAndPullCNAB(t *testing.T) {
 	defer r.Stop(t)
 	registry := r.GetAddress(t)
 
-	// Create a CNAB bundle from a Docker Application Package
-	runCmd(t, icmd.Command("docker-app", "bundle", "/examples/hello-world/example-hello-world.dockerapp",
-		"--invocation-image", "hello-world:0.1.0-invoc",
-		"--namespace", registry+"/e2e",
-		"--out", dir.Join("bundle.json")))
+	invocationImageName := registry + "/e2e/hello-world:0.1.0-invoc"
+	serviceImageName := registry + "/e2e/http-echo"
+	// Build invocation image
+	runCmd(t, icmd.Command("docker", "build", "-f", filepath.Join("testdata", "hello-world", "invocation-image", "Dockerfile"),
+		"-t", invocationImageName, filepath.Join("testdata", "hello-world", "invocation-image")))
 
-	// Push the invocation image to the registry
-	runCmd(t, icmd.Command("docker", "push", registry+"/e2e/hello-world:0.1.0-invoc"))
+	// Fetch service image
+	runCmd(t, icmd.Command("docker", "pull", "hashicorp/http-echo"))
+	runCmd(t, icmd.Command("docker", "tag", "hashicorp/http-echo", serviceImageName))
+
+	// Tidy up my room
+	defer func() {
+		runCmd(t, icmd.Command("docker", "image", "rm", "-f", invocationImageName, "hashicorp/http-echo", serviceImageName))
+	}()
+
+	// Push the images to the registry
+	runCmd(t, icmd.Command("docker", "push", invocationImageName))
+	runCmd(t, icmd.Command("docker", "push", serviceImageName))
+
+	// Templatize the bundle
+	tmpl, err := template.ParseFiles(filepath.Join("testdata", "hello-world", "bundle.json.template"))
+	assert.NilError(t, err)
+	data := struct {
+		InvocationImage string
+		ServiceImage    string
+	}{
+		invocationImageName,
+		serviceImageName,
+	}
+	f, err := os.Create(dir.Join("bundle.json"))
+	assert.NilError(t, err)
+	defer f.Close()
+	err = tmpl.Execute(f, data)
+	assert.NilError(t, err)
 
 	// Save the fixed bundle
 	runCmd(t, icmd.Command("cnab-to-oci", "fixup", dir.Join("bundle.json"),

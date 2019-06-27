@@ -11,6 +11,7 @@ import (
 // MakeTestBundle creates a simple bundle for tests
 func MakeTestBundle() *bundle.Bundle {
 	return &bundle.Bundle{
+		SchemaVersion: "v1.0.0-WD",
 		Actions: map[string]bundle.Action{
 			"action-1": {
 				Modifies: true,
