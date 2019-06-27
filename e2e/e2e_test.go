@@ -23,11 +23,11 @@ func TestPushAndPullCNAB(t *testing.T) {
 	defer r.Stop(t)
 	registry := r.GetAddress(t)
 
-	// Load invocation image from archive
 	invocationImageName := registry + "/e2e/hello-world:0.1.0-invoc"
 	serviceImageName := registry + "/e2e/http-echo"
-	runCmd(t, icmd.Command("docker", "load", "--input", filepath.Join("testdata", "hello-world", "hello-world:0.1.0-invoc.tar")))
-	runCmd(t, icmd.Command("docker", "tag", "hello-world:0.1.0-invoc", invocationImageName))
+	// Build invocation image
+	runCmd(t, icmd.Command("docker", "build", "-f", filepath.Join("testdata", "hello-world", "invocation-image", "Dockerfile"),
+		"-t", invocationImageName, filepath.Join("testdata", "hello-world", "invocation-image")))
 
 	// Fetch service image
 	runCmd(t, icmd.Command("docker", "pull", "hashicorp/http-echo"))
@@ -35,7 +35,7 @@ func TestPushAndPullCNAB(t *testing.T) {
 
 	// Tidy up my room
 	defer func() {
-		runCmd(t, icmd.Command("docker", "image", "rm", "-f", "hello-world:0.1.0-invoc", invocationImageName, "hashicorp/http-echo", serviceImageName))
+		runCmd(t, icmd.Command("docker", "image", "rm", "-f", invocationImageName, "hashicorp/http-echo", serviceImageName))
 	}()
 
 	// Push the images to the registry
