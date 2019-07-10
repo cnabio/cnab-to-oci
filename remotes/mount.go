@@ -10,28 +10,38 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes"
+	"github.com/docker/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
 
-func newDescriptorCopier(ctx context.Context, resolver remotes.Resolver, sourceFetcher remotes.Fetcher, targetRepo string, eventNotifier eventNotifier) (*descriptorCopier, error) {
+var (
+	// labelDistributionSource describes the source blob comes from.
+	labelDistributionSource = "containerd.io/distribution.source"
+)
+
+func newDescriptorCopier(ctx context.Context, resolver remotes.Resolver,
+	sourceFetcher remotes.Fetcher, targetRepo string,
+	eventNotifier eventNotifier, originalSource reference.Named) (*descriptorCopier, error) {
 	destPusher, err := resolver.Pusher(ctx, targetRepo)
 	if err != nil {
 		return nil, err
 	}
 	return &descriptorCopier{
-		sourceFetcher: sourceFetcher,
-		targetPusher:  destPusher,
-		eventNotifier: eventNotifier,
-		resolver:      resolver,
+		sourceFetcher:  sourceFetcher,
+		targetPusher:   destPusher,
+		eventNotifier:  eventNotifier,
+		resolver:       resolver,
+		originalSource: originalSource,
 	}, nil
 }
 
 type descriptorCopier struct {
-	sourceFetcher remotes.Fetcher
-	targetPusher  remotes.Pusher
-	eventNotifier eventNotifier
-	resolver      remotes.Resolver
+	sourceFetcher  remotes.Fetcher
+	targetPusher   remotes.Pusher
+	eventNotifier  eventNotifier
+	resolver       remotes.Resolver
+	originalSource reference.Named
 }
 
 func (h *descriptorCopier) Handle(ctx context.Context, desc *descriptorProgress) (retErr error) {
@@ -50,6 +60,12 @@ func (h *descriptorCopier) Handle(ctx context.Context, desc *descriptorProgress)
 		}
 		h.eventNotifier.reportProgress(retErr)
 	}()
+	// Add the distribution source annotation to help containerd
+	// mount instead of push when possible.
+	repo := fmt.Sprintf("%s.%s", labelDistributionSource, reference.Domain(h.originalSource))
+	desc.Descriptor.Annotations = map[string]string{
+		repo: reference.FamiliarName(h.originalSource),
+	}
 	writer, err := h.targetPusher.Push(ctx, desc.Descriptor)
 	if errors.Cause(err) == errdefs.ErrAlreadyExists {
 		desc.markDone()
@@ -153,8 +169,11 @@ type manifestWalker struct {
 	contentHandler *descriptorContentHandler
 }
 
-func newManifestWalker(eventNotifier eventNotifier, scheduler scheduler,
-	progress *progress, descriptorContentHandler *descriptorContentHandler) *manifestWalker {
+func newManifestWalker(
+	eventNotifier eventNotifier,
+	scheduler scheduler,
+	progress *progress,
+	descriptorContentHandler *descriptorContentHandler) *manifestWalker {
 	sourceFetcher := descriptorContentHandler.descriptorCopier.sourceFetcher
 	return &manifestWalker{
 		eventNotifier:  eventNotifier,

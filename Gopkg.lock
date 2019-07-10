@@ -45,9 +45,11 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:8b7b2605b931bc8e70a0fa84bbd7bc1cde881ca3f2106bbb2917f3b52c342e7b"
+  branch = "master"
+  digest = "1:79126780338b1e3117f1b374fc1556f38bf5eacc92423c3c52c9895305e0ade9"
   name = "github.com/containerd/containerd"
   packages = [
+    "archive/compression",
     "content",
     "errdefs",
     "images",
@@ -57,11 +59,11 @@
     "reference",
     "remotes",
     "remotes/docker",
+    "remotes/docker/schema1",
     "version",
   ]
   pruneopts = "UT"
-  revision = "42c3614d58767e96c1752977fed94d0b140a0173"
-  source = "github.com/simonferquel/containerd"
+  revision = "9d4fc1d405d5648b20845325913e77512dcf6d88"
 
 [[projects]]
   branch = "master"
@@ -465,7 +467,6 @@
     "github.com/containerd/containerd/images",
     "github.com/containerd/containerd/log",
     "github.com/containerd/containerd/platforms",
-    "github.com/containerd/containerd/reference",
     "github.com/containerd/containerd/remotes",
     "github.com/containerd/containerd/remotes/docker",
     "github.com/deislabs/cnab-go/bundle",

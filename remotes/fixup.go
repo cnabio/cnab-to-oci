@@ -40,8 +40,8 @@ type fixupConfig struct {
 }
 
 func (cfg *fixupConfig) complete() error {
-	if cfg.resolverConfig.Resolver == nil || cfg.resolverConfig.OriginProviderWrapper == nil {
-		return errors.New("resolver and originProviderWrapper are required, please use a complete ResolverConfig")
+	if cfg.resolverConfig.Resolver == nil {
+		return errors.New("resolver is required, please use a complete ResolverConfig")
 	}
 	return nil
 }
@@ -110,23 +110,21 @@ type FixupOption func(*fixupConfig) error
 
 // ResolverConfig represents a resolver and its associated OriginProviderWrapper
 type ResolverConfig struct {
-	Resolver              remotes.Resolver
-	OriginProviderWrapper OriginProviderWrapper
+	Resolver remotes.Resolver
 }
 
 // NewResolverConfig creates a ResolverConfig
-func NewResolverConfig(resolver remotes.Resolver, originProviderWrapper OriginProviderWrapper) ResolverConfig {
+func NewResolverConfig(resolver remotes.Resolver) ResolverConfig {
 	return ResolverConfig{
-		Resolver:              resolver,
-		OriginProviderWrapper: originProviderWrapper,
+		Resolver: resolver,
 	}
 }
 
 // NewResolverConfigFromDockerConfigFile creates a ResolverConfig from a docker CLI config file and a list of registries to reach
 // using plain HTTP
 func NewResolverConfigFromDockerConfigFile(cfg *configfile.ConfigFile, plainHTTPRegistries ...string) ResolverConfig {
-	resolver, originProviderWrapper := CreateResolver(cfg, plainHTTPRegistries...)
-	return NewResolverConfig(resolver, originProviderWrapper)
+	resolver := CreateResolver(cfg, plainHTTPRegistries...)
+	return NewResolverConfig(resolver)
 }
 
 func newFixupConfig(b *bundle.Bundle, ref reference.Named, resolverConfig ResolverConfig, options ...FixupOption) (fixupConfig, error) {
@@ -225,12 +223,9 @@ func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig
 	if err := fixupPlatforms(ctx, &baseImage, &fixupInfo, sourceFetcher, platformFilter); err != nil {
 		return bundle.BaseImage{}, err
 	}
-	if err := setFromImageReference(cfg.resolverConfig.OriginProviderWrapper, fixupInfo.sourceRef); err != nil {
-		return bundle.BaseImage{}, err
-	}
 
 	// Prepare the copier
-	copier, err := newDescriptorCopier(ctx, cfg.resolverConfig.Resolver, sourceFetcher, fixupInfo.targetRepo.String(), notifyEvent)
+	copier, err := newDescriptorCopier(ctx, cfg.resolverConfig.Resolver, sourceFetcher, fixupInfo.targetRepo.String(), notifyEvent, fixupInfo.sourceRef)
 	if err != nil {
 		return bundle.BaseImage{}, err
 	}
