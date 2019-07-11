@@ -15,8 +15,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
+const (
 	// labelDistributionSource describes the source blob comes from.
+	// This label comes from containerd: https://github.com/containerd/containerd/blob/master/remotes/docker/handler.go#L35
 	labelDistributionSource = "containerd.io/distribution.source"
 )
 
@@ -60,13 +61,7 @@ func (h *descriptorCopier) Handle(ctx context.Context, desc *descriptorProgress)
 		}
 		h.eventNotifier.reportProgress(retErr)
 	}()
-	// Add the distribution source annotation to help containerd
-	// mount instead of push when possible.
-	repo := fmt.Sprintf("%s.%s", labelDistributionSource, reference.Domain(h.originalSource))
-	desc.Descriptor.Annotations = map[string]string{
-		repo: reference.FamiliarName(h.originalSource),
-	}
-	writer, err := h.targetPusher.Push(ctx, desc.Descriptor)
+	writer, err := pushWithAnnotation(ctx, h.targetPusher, h.originalSource, desc.Descriptor)
 	if errors.Cause(err) == errdefs.ErrAlreadyExists {
 		desc.markDone()
 		if strings.Contains(err.Error(), "mounted") {
@@ -91,6 +86,16 @@ func (h *descriptorCopier) Handle(ctx context.Context, desc *descriptorProgress)
 		desc.markDone()
 	}
 	return err
+}
+
+func pushWithAnnotation(ctx context.Context, pusher remotes.Pusher, ref reference.Named, desc ocischemav1.Descriptor) (content.Writer, error) {
+	// Add the distribution source annotation to help containerd
+	// mount instead of push when possible.
+	repo := fmt.Sprintf("%s.%s", labelDistributionSource, reference.Domain(ref))
+	desc.Annotations = map[string]string{
+		repo: reference.FamiliarName(ref),
+	}
+	return pusher.Push(ctx, desc)
 }
 
 func isManifest(mediaType string) bool {
