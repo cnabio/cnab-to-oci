@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	containerdRemotes "github.com/containerd/containerd/remotes"
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cnab-to-oci/remotes"
@@ -80,6 +81,6 @@ func displayEvent(ev remotes.FixupEvent) {
 	}
 }
 
-func createResolver(insecureRegistries []string) remotes.ResolverConfig {
-	return remotes.NewResolverConfigFromDockerConfigFile(config.LoadDefaultConfigFile(os.Stderr), insecureRegistries...)
+func createResolver(insecureRegistries []string) containerdRemotes.Resolver {
+	return remotes.CreateResolver(config.LoadDefaultConfigFile(os.Stderr), insecureRegistries...)
 }

@@ -56,13 +56,13 @@ func runPush(opts pushOptions) error {
 	if err := json.Unmarshal(bundleJSON, &b); err != nil {
 		return err
 	}
-	resolverConfig := createResolver(opts.insecureRegistries)
+	resolver := createResolver(opts.insecureRegistries)
 	ref, err := reference.ParseNormalizedNamed(opts.targetRef)
 	if err != nil {
 		return err
 	}
 
-	err = remotes.FixupBundle(context.Background(), &b, ref, resolverConfig, remotes.WithEventCallback(displayEvent),
+	err = remotes.FixupBundle(context.Background(), &b, ref, resolver, remotes.WithEventCallback(displayEvent),
 		remotes.WithInvocationImagePlatforms(opts.invocationPlatforms),
 		remotes.WithComponentImagePlatforms(opts.componentPlatforms))
 	if err != nil {
@@ -72,7 +72,7 @@ func runPush(opts pushOptions) error {
 	logger.SetLevel(logrus.FatalLevel)
 	logger.SetOutput(ioutil.Discard)
 	ctx := log.WithLogger(context.Background(), logrus.NewEntry(logger))
-	d, err := remotes.Push(ctx, &b, ref, resolverConfig.Resolver, opts.allowFallbacks)
+	d, err := remotes.Push(ctx, &b, ref, resolver, opts.allowFallbacks)
 	if err != nil {
 		return err
 	}
