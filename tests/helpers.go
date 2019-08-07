@@ -70,14 +70,12 @@ func MakeTestBundle() *bundle.Bundle {
 				Default: "hello",
 			},
 		},
-		Parameters: &bundle.ParametersDefinition{
-			Fields: map[string]bundle.ParameterDefinition{
-				"param1": {
-					Definition: "param1Type",
-					Destination: &bundle.Location{
-						EnvironmentVariable: "env_var",
-						Path:                "/some/path",
-					},
+		Parameters: map[string]bundle.Parameter{
+			"param1": {
+				Definition: "param1Type",
+				Destination: &bundle.Location{
+					EnvironmentVariable: "env_var",
+					Path:                "/some/path",
 				},
 			},
 		},
