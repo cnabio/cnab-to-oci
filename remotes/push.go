@@ -22,20 +22,48 @@ type ManifestOption func(*ocischemav1.Index) error
 
 // Push pushes a bundle as an OCI Image Index manifest
 func Push(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver, allowFallbacks bool, options ...ManifestOption) (ocischemav1.Descriptor, error) {
-	logger := log.GetLogger(ctx)
-	logger.Debugf("Pushing CNAB Bundle %s", ref)
+	log.G(ctx).Debugf("Pushing CNAB Bundle %s", ref)
+
+	confManifestDescriptor, err := pushConfig(ctx, b, ref, resolver, allowFallbacks)
+	if err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+
+	indexDescriptor, err := pushIndex(ctx, b, ref, resolver, allowFallbacks, confManifestDescriptor, options...)
+	if err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+
+	log.G(ctx).Debug("CNAB Bundle pushed")
+	return indexDescriptor, nil
+}
+
+func pushConfig(ctx context.Context,
+	b *bundle.Bundle,
+	ref reference.Named, //nolint:interfacer
+	resolver remotes.Resolver,
+	allowFallbacks bool) (ocischemav1.Descriptor, error) {
+	logger := log.G(ctx)
+	logger.Debugf("Pushing CNAB Bundle Config")
+
 	bundleConfig, err := converter.CreateBundleConfig(b).PrepareForPush()
 	if err != nil {
 		return ocischemav1.Descriptor{}, err
 	}
-	logger.Debugf("Pushing CNAB Bundle Config")
 	confManifestDescriptor, err := pushBundleConfig(ctx, resolver, ref.Name(), bundleConfig, allowFallbacks)
 	if err != nil {
 		return ocischemav1.Descriptor{}, fmt.Errorf("error while pushing bundle config manifest: %s", err)
 	}
-	logger.Debug("CNAB Bundle Config pushed")
 
+	logger.Debug("CNAB Bundle Config pushed")
+	return confManifestDescriptor, nil
+}
+
+func pushIndex(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver, allowFallbacks bool,
+	confManifestDescriptor ocischemav1.Descriptor, options ...ManifestOption) (ocischemav1.Descriptor, error) {
+	logger := log.G(ctx)
 	logger.Debug("Pushing CNAB Index")
+
 	indexDescriptor, indexPayload, err := prepareIndex(b, ref, confManifestDescriptor, options...)
 	if err != nil {
 		return ocischemav1.Descriptor{}, err
@@ -51,19 +79,29 @@ func Push(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver r
 			return ocischemav1.Descriptor{}, err
 		}
 		// retry with a docker manifestlist
-		indexDescriptor, indexPayload, err = prepareIndexNonOCI(b, ref, confManifestDescriptor, options...)
-		if err != nil {
-			return ocischemav1.Descriptor{}, err
-		}
-		logger.Debug("Trying to push Index with Manifest list as fallback")
-		logger.Debug(string(indexPayload))
-		logger.Debug("Manifest list Descriptor")
-		logPayload(logger, indexDescriptor)
-		if err := pushPayload(ctx, resolver, ref.String(), indexDescriptor, indexPayload); err != nil {
-			return ocischemav1.Descriptor{}, err
-		}
+		return pushDockerManifestList(ctx, b, ref, resolver, confManifestDescriptor, options...)
 	}
+
 	logger.Debugf("CNAB Index pushed")
+	return indexDescriptor, nil
+}
+
+func pushDockerManifestList(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver,
+	confManifestDescriptor ocischemav1.Descriptor, options ...ManifestOption) (ocischemav1.Descriptor, error) {
+	logger := log.G(ctx)
+
+	indexDescriptor, indexPayload, err := prepareIndexNonOCI(b, ref, confManifestDescriptor, options...)
+	if err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
+	logger.Debug("Trying to push Index with Manifest list as fallback")
+	logger.Debug(string(indexPayload))
+	logger.Debug("Manifest list Descriptor")
+	logPayload(logger, indexDescriptor)
+
+	if err := pushPayload(ctx, resolver, ref.String(), indexDescriptor, indexPayload); err != nil {
+		return ocischemav1.Descriptor{}, err
+	}
 	return indexDescriptor, nil
 }
 
@@ -149,27 +187,27 @@ func pushPayload(ctx context.Context, resolver remotes.Resolver, reference strin
 }
 
 func pushBundleConfig(ctx context.Context, resolver remotes.Resolver, reference string, bundleConfig *converter.PreparedBundleConfig, allowFallbacks bool) (ocischemav1.Descriptor, error) {
+	if d, err := pushBundleConfigDescriptor(ctx, "Config", resolver, reference,
+		bundleConfig.ConfigBlobDescriptor, bundleConfig.ConfigBlob, bundleConfig.Fallback, allowFallbacks); err != nil {
+		return d, err
+	}
+	return pushBundleConfigDescriptor(ctx, "Config Manifest", resolver, reference,
+		bundleConfig.ManifestDescriptor, bundleConfig.Manifest, bundleConfig.Fallback, allowFallbacks)
+}
+
+func pushBundleConfigDescriptor(ctx context.Context, name string, resolver remotes.Resolver, reference string,
+	descriptor ocischemav1.Descriptor, payload []byte, fallback *converter.PreparedBundleConfig, allowFallbacks bool) (ocischemav1.Descriptor, error) {
 	logger := log.G(ctx)
-	logger.Debug("Trying to push CNAB Bundle Config")
-	logger.Debug("CNAB Bundle Config Descriptor")
-	logPayload(logger, bundleConfig.ConfigBlobDescriptor)
-	if err := pushPayload(ctx, resolver, reference, bundleConfig.ConfigBlobDescriptor, bundleConfig.ConfigBlob); err != nil {
-		if allowFallbacks && bundleConfig.Fallback != nil {
-			logger.Debugf("Failed to push CNAB Bundle Config, trying with a fallback method")
-			return pushBundleConfig(ctx, resolver, reference, bundleConfig.Fallback, allowFallbacks)
+	logger.Debugf("Trying to push CNAB Bundle %s", name)
+	logger.Debugf("CNAB Bundle %s Descriptor", name)
+	logPayload(logger, descriptor)
+
+	if err := pushPayload(ctx, resolver, reference, descriptor, payload); err != nil {
+		if allowFallbacks && fallback != nil {
+			logger.Debugf("Failed to push CNAB Bundle %s, trying with a fallback method", name)
+			return pushBundleConfig(ctx, resolver, reference, fallback, allowFallbacks)
 		}
 		return ocischemav1.Descriptor{}, err
 	}
-	logger.Debug("Trying to push CNAB Bundle Config Manifest")
-	logger.Debug(string(bundleConfig.Manifest))
-	logger.Debug("CNAB Bundle Config Manifest Descriptor")
-	logPayload(logger, bundleConfig.ManifestDescriptor)
-	if err := pushPayload(ctx, resolver, reference, bundleConfig.ManifestDescriptor, bundleConfig.Manifest); err != nil {
-		if allowFallbacks && bundleConfig.Fallback != nil {
-			logger.Debug("Failed to push CNAB Bundle Config Manifest, trying with a fallback method")
-			return pushBundleConfig(ctx, resolver, reference, bundleConfig.Fallback, allowFallbacks)
-		}
-		return ocischemav1.Descriptor{}, err
-	}
-	return bundleConfig.ManifestDescriptor, nil
+	return descriptor, nil
 }
