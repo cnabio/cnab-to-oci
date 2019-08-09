@@ -1,13 +1,10 @@
 package remotes
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"sync"
 
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/log"
@@ -15,107 +12,8 @@ import (
 	"github.com/containerd/containerd/remotes"
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution/reference"
-	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
-
-const (
-	defaultMaxConcurrentJobs = 4
-	defaultJobsBufferLength  = 50
-)
-
-func noopEventCallback(FixupEvent) {}
-
-// fixupConfig defines the input required for a Fixup operation
-type fixupConfig struct {
-	bundle                        *bundle.Bundle
-	targetRef                     reference.Named
-	eventCallback                 func(FixupEvent)
-	maxConcurrentJobs             int
-	jobsBufferLength              int
-	resolver                      remotes.Resolver
-	invocationImagePlatformFilter platforms.Matcher
-	componentImagePlatformFilter  platforms.Matcher
-}
-
-// WithInvocationImagePlatforms use filters platforms for an invocation image
-func WithInvocationImagePlatforms(supportedPlatforms []string) FixupOption {
-	return func(cfg *fixupConfig) error {
-		if len(supportedPlatforms) == 0 {
-			return nil
-		}
-		plats, err := toPlatforms(supportedPlatforms)
-		if err != nil {
-			return err
-		}
-		cfg.invocationImagePlatformFilter = platforms.Any(plats...)
-		return nil
-	}
-}
-
-// WithComponentImagePlatforms use filters platforms for an invocation image
-func WithComponentImagePlatforms(supportedPlatforms []string) FixupOption {
-	return func(cfg *fixupConfig) error {
-		if len(supportedPlatforms) == 0 {
-			return nil
-		}
-		plats, err := toPlatforms(supportedPlatforms)
-		if err != nil {
-			return err
-		}
-		cfg.componentImagePlatformFilter = platforms.Any(plats...)
-		return nil
-	}
-}
-
-func toPlatforms(supportedPlatforms []string) ([]ocischemav1.Platform, error) {
-	result := make([]ocischemav1.Platform, len(supportedPlatforms))
-	for ix, p := range supportedPlatforms {
-		plat, err := platforms.Parse(p)
-		if err != nil {
-			return nil, err
-		}
-		result[ix] = plat
-	}
-	return result, nil
-}
-
-// WithEventCallback specifies a callback to execute for each Fixup event
-func WithEventCallback(callback func(FixupEvent)) FixupOption {
-	return func(cfg *fixupConfig) error {
-		cfg.eventCallback = callback
-		return nil
-	}
-}
-
-// WithParallelism provides a way to change the max concurrent jobs and the max number of jobs queued up
-func WithParallelism(maxConcurrentJobs int, jobsBufferLength int) FixupOption {
-	return func(cfg *fixupConfig) error {
-		cfg.maxConcurrentJobs = maxConcurrentJobs
-		cfg.jobsBufferLength = jobsBufferLength
-		return nil
-	}
-}
-
-// FixupOption is a helper for configuring a FixupBundle
-type FixupOption func(*fixupConfig) error
-
-func newFixupConfig(b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver, options ...FixupOption) (fixupConfig, error) {
-	cfg := fixupConfig{
-		bundle:            b,
-		targetRef:         ref,
-		resolver:          resolver,
-		eventCallback:     noopEventCallback,
-		jobsBufferLength:  defaultJobsBufferLength,
-		maxConcurrentJobs: defaultMaxConcurrentJobs,
-	}
-	for _, opt := range options {
-		if err := opt(&cfg); err != nil {
-			return fixupConfig{}, err
-		}
-	}
-	return cfg, nil
-}
 
 // FixupBundle checks that all the references are present in the referenced repository, otherwise it will mount all
 // the manifests to that repository. The bundle is then patched with the new digested references.
@@ -271,42 +169,6 @@ func fixupPlatforms(ctx context.Context, baseImage *bundle.BaseImage, fixupInfo 
 	return nil
 }
 
-type sourceFetcherAdder interface {
-	remotes.Fetcher
-	Add(data []byte) digest.Digest
-}
-
-type sourceFetcherWithLocalData struct {
-	inner     remotes.Fetcher
-	localData map[digest.Digest][]byte
-}
-
-func newSourceFetcherWithLocalData(inner remotes.Fetcher) *sourceFetcherWithLocalData {
-	return &sourceFetcherWithLocalData{
-		inner:     inner,
-		localData: make(map[digest.Digest][]byte),
-	}
-}
-
-func (s *sourceFetcherWithLocalData) Add(data []byte) digest.Digest {
-	d := digest.FromBytes(data)
-	s.localData[d] = data
-	return d
-}
-
-func (s *sourceFetcherWithLocalData) Fetch(ctx context.Context, desc ocischemav1.Descriptor) (io.ReadCloser, error) {
-	if v, ok := s.localData[desc.Digest]; ok {
-		return ioutil.NopCloser(bytes.NewReader(v)), nil
-	}
-	return s.inner.Fetch(ctx, desc)
-}
-
-type imageFixupInfo struct {
-	targetRepo         reference.Named
-	sourceRef          reference.Named
-	resolvedDescriptor ocischemav1.Descriptor
-}
-
 func fixupBaseImage(ctx context.Context,
 	baseImage *bundle.BaseImage,
 	targetRef reference.Named, //nolint: interfacer
@@ -366,119 +228,4 @@ func checkBaseImage(baseImage *bundle.BaseImage) error {
 	}
 
 	return nil
-}
-
-// FixupEvent is an event that is raised by the Fixup Logic
-type FixupEvent struct {
-	SourceImage    string
-	DestinationRef reference.Named
-	EventType      FixupEventType
-	Message        string
-	Error          error
-	Progress       ProgressSnapshot
-}
-
-// FixupEventType is the the type of event raised by the Fixup logic
-type FixupEventType string
-
-const (
-	// FixupEventTypeCopyImageStart is raised when the Fixup logic starts copying an
-	// image
-	FixupEventTypeCopyImageStart = FixupEventType("CopyImageStart")
-
-	// FixupEventTypeCopyImageEnd is raised when the Fixup logic stops copying an
-	// image. Error might be populated
-	FixupEventTypeCopyImageEnd = FixupEventType("CopyImageEnd")
-
-	// FixupEventTypeProgress is raised when Fixup logic reports progression
-	FixupEventTypeProgress = FixupEventType("Progress")
-)
-
-type descriptorProgress struct {
-	ocischemav1.Descriptor
-	done     bool
-	action   string
-	err      error
-	children []*descriptorProgress
-	mut      sync.RWMutex
-}
-
-func (p *descriptorProgress) markDone() {
-	p.mut.Lock()
-	defer p.mut.Unlock()
-	p.done = true
-}
-
-func (p *descriptorProgress) setAction(a string) {
-	p.mut.Lock()
-	defer p.mut.Unlock()
-	p.action = a
-}
-
-func (p *descriptorProgress) setError(err error) {
-	p.mut.Lock()
-	defer p.mut.Unlock()
-	p.err = err
-}
-
-func (p *descriptorProgress) addChild(child *descriptorProgress) {
-	p.mut.Lock()
-	defer p.mut.Unlock()
-	p.children = append(p.children, child)
-}
-
-func (p *descriptorProgress) snapshot() DescriptorProgressSnapshot {
-	p.mut.RLock()
-	defer p.mut.RUnlock()
-	result := DescriptorProgressSnapshot{
-		Descriptor: p.Descriptor,
-		Done:       p.done,
-		Action:     p.action,
-		Error:      p.err,
-	}
-	if len(p.children) != 0 {
-		result.Children = make([]DescriptorProgressSnapshot, len(p.children))
-		for ix, child := range p.children {
-			result.Children[ix] = child.snapshot()
-		}
-	}
-	return result
-}
-
-type progress struct {
-	roots []*descriptorProgress
-	mut   sync.RWMutex
-}
-
-func (p *progress) addRoot(root *descriptorProgress) {
-	p.mut.Lock()
-	defer p.mut.Unlock()
-	p.roots = append(p.roots, root)
-}
-
-func (p *progress) snapshot() ProgressSnapshot {
-	p.mut.RLock()
-	defer p.mut.RUnlock()
-	result := ProgressSnapshot{}
-	if len(p.roots) != 0 {
-		result.Roots = make([]DescriptorProgressSnapshot, len(p.roots))
-		for ix, root := range p.roots {
-			result.Roots[ix] = root.snapshot()
-		}
-	}
-	return result
-}
-
-// DescriptorProgressSnapshot describes the current progress of a descriptor
-type DescriptorProgressSnapshot struct {
-	ocischemav1.Descriptor
-	Done     bool
-	Action   string
-	Error    error
-	Children []DescriptorProgressSnapshot
-}
-
-// ProgressSnapshot describes the current progress of a Fixup operation
-type ProgressSnapshot struct {
-	Roots []DescriptorProgressSnapshot
 }
