@@ -21,7 +21,7 @@ func main() {
 			return nil
 		},
 	}
-	cmd.PersistentFlags().StringVar(&logLevel, "log-level", "warning", "set the log-level {trace|debug|info|warning|error|fatal|panic}")
+	cmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", `Set the logging level ("debug"|"info"|"warn"|"error"|"fatal")`)
 	cmd.AddCommand(fixupCmd(), pushCmd(), pullCmd(), versionCmd())
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)

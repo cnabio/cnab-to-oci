@@ -10,13 +10,13 @@ import (
 	"sync"
 
 	"github.com/containerd/containerd/images"
+	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes"
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -120,7 +120,8 @@ func newFixupConfig(b *bundle.Bundle, ref reference.Named, resolver remotes.Reso
 // FixupBundle checks that all the references are present in the referenced repository, otherwise it will mount all
 // the manifests to that repository. The bundle is then patched with the new digested references.
 func FixupBundle(ctx context.Context, b *bundle.Bundle, ref reference.Named, resolver remotes.Resolver, opts ...FixupOption) error {
-	logrus.Infof("Fixing up bundle %s", ref)
+	logger := log.G(ctx)
+	logger.Debugf("Fixing up bundle %s", ref)
 	cfg, err := newFixupConfig(b, ref, resolver, opts...)
 	if err != nil {
 		return err
@@ -151,12 +152,13 @@ func FixupBundle(ctx context.Context, b *bundle.Bundle, ref reference.Named, res
 		}
 		b.Images[name] = original
 	}
-	logrus.Info("Bundle fixed")
+	logger.Debug("Bundle fixed")
 	return nil
 }
 
 func fixupImage(ctx context.Context, baseImage bundle.BaseImage, cfg fixupConfig, events chan<- FixupEvent, platformFilter platforms.Matcher) (_ bundle.BaseImage, retErr error) {
-	logrus.Infof("Fixing image %s", baseImage.Image)
+	log.G(ctx).Debugf("Fixing image %s", baseImage.Image)
+	ctx = withMutedContext(ctx)
 	progress := &progress{}
 	originalSource := baseImage.Image
 	notifyEvent := func(eventType FixupEventType, message string, err error) {
