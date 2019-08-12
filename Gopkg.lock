@@ -470,6 +470,7 @@
     "github.com/docker/distribution/reference",
     "github.com/docker/distribution/registry/client/auth",
     "github.com/docker/docker/registry",
+    "github.com/docker/go/canonical/json",
     "github.com/opencontainers/go-digest",
     "github.com/opencontainers/image-spec/specs-go",
     "github.com/opencontainers/image-spec/specs-go/v1",

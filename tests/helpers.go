@@ -3,6 +3,7 @@ package tests
 import (
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/deislabs/cnab-go/bundle/definition"
+	"github.com/docker/cnab-to-oci/relocation"
 	"github.com/docker/distribution/manifest/schema2"
 	ocischema "github.com/opencontainers/image-spec/specs-go"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -29,28 +30,31 @@ func MakeTestBundle() *bundle.Bundle {
 		Images: map[string]bundle.Image{
 			"image-1": {
 				BaseImage: bundle.BaseImage{
-					Image:     "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
+					Image:     "my.registry/namespace/image-1",
 					ImageType: "oci",
 					MediaType: "application/vnd.oci.image.manifest.v1+json",
 					Size:      507,
+					Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
 				},
 			},
 			"another-image": {
 				BaseImage: bundle.BaseImage{
-					Image:     "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
+					Image:     "my.registry/namespace/another-image",
 					ImageType: "oci",
 					MediaType: "application/vnd.oci.image.manifest.v1+json",
 					Size:      507,
+					Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0342",
 				},
 			},
 		},
 		InvocationImages: []bundle.InvocationImage{
 			{
 				BaseImage: bundle.BaseImage{
-					Image:     "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
+					Image:     "my.registry/namespace/my-app-invoc",
 					ImageType: "docker",
 					MediaType: "application/vnd.docker.distribution.manifest.v2+json",
 					Size:      506,
+					Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
 				},
 			},
 		},
@@ -122,7 +126,7 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 				},
 			},
 			{
-				Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
+				Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
 				MediaType: "application/vnd.docker.distribution.manifest.v2+json",
 				Size:      506,
 				Annotations: map[string]string{
@@ -130,7 +134,7 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 				},
 			},
 			{
-				Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
+				Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0342",
 				MediaType: "application/vnd.oci.image.manifest.v1+json",
 				Size:      507,
 				Annotations: map[string]string{
@@ -148,5 +152,14 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 				},
 			},
 		},
+	}
+}
+
+// MakeRelocationMap generates a fake relocation map
+func MakeRelocationMap() relocation.ImageRelocationMap {
+	return relocation.ImageRelocationMap{
+		"my.registry/namespace/image-1":       "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
+		"my.registry/namespace/another-image": "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0342",
+		"my.registry/namespace/my-app-invoc":  "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
 	}
 }

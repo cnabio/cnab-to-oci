@@ -20,6 +20,7 @@ type pushOptions struct {
 	allowFallbacks      bool
 	invocationPlatforms []string
 	componentPlatforms  []string
+	autoUpdateBundle    bool
 }
 
 func pushCmd() *cobra.Command {
@@ -42,6 +43,8 @@ func pushCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&opts.allowFallbacks, "allow-fallbacks", true, "Enable automatic compatibility fallbacks for registries without support for custom media type, or OCI manifests")
 	cmd.Flags().StringSliceVar(&opts.invocationPlatforms, "invocation-platforms", nil, "Platforms to push (for multi-arch invocation images)")
 	cmd.Flags().StringSliceVar(&opts.componentPlatforms, "component-platforms", nil, "Platforms to push (for multi-arch component images)")
+	cmd.Flags().BoolVar(&opts.autoUpdateBundle, "auto-update-bundle", false, "Updates the bundle image properties with the one resolved on the registry")
+
 	return cmd
 }
 
@@ -60,13 +63,19 @@ func runPush(opts pushOptions) error {
 		return err
 	}
 
-	err = remotes.FixupBundle(context.Background(), &b, ref, resolver, remotes.WithEventCallback(displayEvent),
+	fixupOptions := []remotes.FixupOption{
+		remotes.WithEventCallback(displayEvent),
 		remotes.WithInvocationImagePlatforms(opts.invocationPlatforms),
-		remotes.WithComponentImagePlatforms(opts.componentPlatforms))
+		remotes.WithComponentImagePlatforms(opts.componentPlatforms),
+	}
+	if opts.autoUpdateBundle {
+		fixupOptions = append(fixupOptions, remotes.WithAutoBundleUpdate())
+	}
+	relocationMap, err := remotes.FixupBundle(context.Background(), &b, ref, resolver, fixupOptions...)
 	if err != nil {
 		return err
 	}
-	d, err := remotes.Push(context.Background(), &b, ref, resolver, opts.allowFallbacks)
+	d, err := remotes.Push(context.Background(), &b, relocationMap, ref, resolver, opts.allowFallbacks)
 	if err != nil {
 		return err
 	}

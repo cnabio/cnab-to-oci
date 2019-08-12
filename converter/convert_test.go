@@ -10,10 +10,6 @@ import (
 	"gotest.tools/assert"
 )
 
-func makeTestBundleConfig() *BundleConfig {
-	return CreateBundleConfig(tests.MakeTestBundle())
-}
-
 func TestConvertFromFixedUpBundleToOCI(t *testing.T) {
 	bundleConfigDescriptor := ocischemav1.Descriptor{
 		Digest:    "sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341",
@@ -23,19 +19,21 @@ func TestConvertFromFixedUpBundleToOCI(t *testing.T) {
 	targetRef := "my.registry/namespace/my-app:0.1.0"
 	src := tests.MakeTestBundle()
 
+	relocationMap := tests.MakeRelocationMap()
+
 	expected := tests.MakeTestOCIIndex()
 
 	// Convert from bundle to OCI index
 	named, err := reference.ParseNormalizedNamed(targetRef)
 	assert.NilError(t, err)
-	actual, err := ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
+	actual, err := ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor, relocationMap)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, actual)
 
 	// Nil maintainers does not add annotation
 	src = tests.MakeTestBundle()
 	src.Maintainers = nil
-	actual, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
+	actual, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor, relocationMap)
 	assert.NilError(t, err)
 	_, hasMaintainers := actual.Annotations[ocischemav1.AnnotationAuthors]
 	assert.Assert(t, !hasMaintainers)
@@ -43,7 +41,7 @@ func TestConvertFromFixedUpBundleToOCI(t *testing.T) {
 	// Nil keywords does not add annotation
 	src = tests.MakeTestBundle()
 	src.Keywords = nil
-	actual, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
+	actual, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor, relocationMap)
 	assert.NilError(t, err)
 	_, hasKeywords := actual.Annotations[CNABKeywordsAnnotation]
 	assert.Assert(t, !hasKeywords)
@@ -51,46 +49,55 @@ func TestConvertFromFixedUpBundleToOCI(t *testing.T) {
 	// Multiple invocation images is not supported
 	src = tests.MakeTestBundle()
 	src.InvocationImages = append(src.InvocationImages, src.InvocationImages[0])
-	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
+	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor, relocationMap)
 	assert.ErrorContains(t, err, "only one invocation image supported")
 
 	// Invalid media type
 	src = tests.MakeTestBundle()
 	src.InvocationImages[0].MediaType = "some-invalid-mediatype"
-	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
-	assert.ErrorContains(t, err, `unsupported media type "some-invalid-mediatype" for image "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341"`)
+	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor, relocationMap)
+	assert.ErrorContains(t, err, `unsupported media type "some-invalid-mediatype" for image "my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343"`)
 
 	// All images must be in the same repository
 	src = tests.MakeTestBundle()
-	src.InvocationImages[0].BaseImage.Image = "my.registry/namespace/other-repo@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341"
-	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
+	badRelocationMap := tests.MakeRelocationMap()
+	badRelocationMap["my.registry/namespace/my-app-invoc"] = "my.registry/namespace/other-repo@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343"
+	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor, badRelocationMap)
 	assert.ErrorContains(t, err, `invalid invocation image: image `+
-		`"my.registry/namespace/other-repo@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341" is not in the same repository as "my.registry/namespace/my-app:0.1.0"`)
+		`"my.registry/namespace/other-repo@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343" is not in the same repository as "my.registry/namespace/my-app:0.1.0"`)
 
 	// Image reference must be digested
 	src = tests.MakeTestBundle()
-	src.InvocationImages[0].BaseImage.Image = "my.registry/namespace/my-app:not-digested"
-	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
+	badRelocationMap = tests.MakeRelocationMap()
+	badRelocationMap["my.registry/namespace/my-app-invoc"] = "my.registry/namespace/my-app:not-digested"
+	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor, badRelocationMap)
 	assert.ErrorContains(t, err, "invalid invocation image: image \"my.registry/namespace/"+
 		"my-app:not-digested\" is not a digested reference")
 
 	// Invalid reference
 	src = tests.MakeTestBundle()
-	src.InvocationImages[0].BaseImage.Image = "Some/iNvalid/Ref"
-	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
+	badRelocationMap = tests.MakeRelocationMap()
+	badRelocationMap["my.registry/namespace/my-app-invoc"] = "Some/iNvalid/Ref"
+	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor, badRelocationMap)
 	assert.ErrorContains(t, err, "invalid invocation image: "+
 		"image \"Some/iNvalid/Ref\" is not a valid image reference: invalid reference format: repository name must be lowercase")
+
+	// Invalid size
+	src = tests.MakeTestBundle()
+	src.InvocationImages[0].Size = 0
+	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor, relocationMap)
+	assert.ErrorContains(t, err, "size is not set")
 
 	// mediatype ociindex
 	src = tests.MakeTestBundle()
 	src.InvocationImages[0].MediaType = ocischemav1.MediaTypeImageIndex
-	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
+	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor, relocationMap)
 	assert.NilError(t, err)
 
 	// mediatype docker manifestlist
 	src = tests.MakeTestBundle()
 	src.InvocationImages[0].MediaType = "application/vnd.docker.distribution.manifest.list.v2+json"
-	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor)
+	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor, relocationMap)
 	assert.NilError(t, err)
 }
 
@@ -141,62 +148,17 @@ func TestGetConfigDescriptor(t *testing.T) {
 	assert.ErrorContains(t, err, "bundle config not found")
 }
 
-func TestConvertFromOCIToBundle(t *testing.T) {
+func TestGenerateRelocationMap(t *testing.T) {
 	targetRef := "my.registry/namespace/my-app:0.1.0"
 	named, err := reference.ParseNormalizedNamed(targetRef)
 	assert.NilError(t, err)
+
 	ix := tests.MakeTestOCIIndex()
-	config := makeTestBundleConfig()
-	expected := tests.MakeTestBundle()
+	b := tests.MakeTestBundle()
 
-	result, err := ConvertOCIIndexToBundle(ix, config, named)
+	expected := tests.MakeRelocationMap()
+
+	relocationMap, err := GenerateRelocationMap(ix, b, named)
 	assert.NilError(t, err)
-	assert.DeepEqual(t, expected, result)
-
-	// Without title annotation
-	delete(ix.Annotations, ocischemav1.AnnotationTitle)
-	_, err = ConvertOCIIndexToBundle(ix, config, named)
-	assert.ErrorContains(t, err, "manifest is missing title annotation")
-
-	// Without version annotation
-	ix = tests.MakeTestOCIIndex()
-	delete(ix.Annotations, ocischemav1.AnnotationVersion)
-	_, err = ConvertOCIIndexToBundle(ix, config, named)
-	assert.ErrorContains(t, err, "manifest is missing version annotation")
-
-	// Invalid authors annotation
-	ix = tests.MakeTestOCIIndex()
-	ix.Annotations[ocischemav1.AnnotationAuthors] = "Some garbage"
-	_, err = ConvertOCIIndexToBundle(ix, config, named)
-	assert.ErrorContains(t, err, "unable to parse maintainers")
-
-	// Invalid keywords annotation
-	ix = tests.MakeTestOCIIndex()
-	ix.Annotations[CNABKeywordsAnnotation] = "Some garbage"
-	_, err = ConvertOCIIndexToBundle(ix, config, named)
-	assert.ErrorContains(t, err, "unable to parse keywords")
-
-	// bad media type
-	ix = tests.MakeTestOCIIndex()
-	ix.Manifests[1].MediaType = "Some garbage"
-	_, err = ConvertOCIIndexToBundle(ix, config, named)
-	assert.ErrorContains(t, err, "unsupported manifest descriptor")
-
-	// no cnab type (invocation/component)
-	ix = tests.MakeTestOCIIndex()
-	delete(ix.Manifests[1].Annotations, CNABDescriptorTypeAnnotation)
-	_, err = ConvertOCIIndexToBundle(ix, config, named)
-	assert.ErrorContains(t, err, "has no CNAB descriptor type annotation \"io.cnab.manifest.type\"")
-
-	// bad cnab type
-	ix = tests.MakeTestOCIIndex()
-	ix.Manifests[1].Annotations[CNABDescriptorTypeAnnotation] = "Some garbage"
-	_, err = ConvertOCIIndexToBundle(ix, config, named)
-	assert.ErrorContains(t, err, "invalid CNAB descriptor type \"Some garbage\" in descriptor")
-
-	// component name missing
-	ix = tests.MakeTestOCIIndex()
-	delete(ix.Manifests[2].Annotations, CNABDescriptorComponentNameAnnotation)
-	_, err = ConvertOCIIndexToBundle(ix, config, named)
-	assert.ErrorContains(t, err, "component name missing in descriptor")
+	assert.DeepEqual(t, relocationMap, expected)
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,14 +11,17 @@ import (
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
+	"github.com/docker/go/canonical/json"
 	"github.com/spf13/cobra"
 )
 
 type fixupOptions struct {
 	input              string
-	output             string
+	bundle             string
+	relocationMap      string
 	targetRef          string
 	insecureRegistries []string
+	autoUpdateBundle   bool
 }
 
 func fixupCmd() *cobra.Command {
@@ -34,9 +36,11 @@ func fixupCmd() *cobra.Command {
 			return runFixup(opts)
 		},
 	}
-	cmd.Flags().StringVarP(&opts.output, "output", "o", "fixed-bundle.json", "specify the output file")
+	cmd.Flags().StringVar(&opts.bundle, "bundle", "fixed-bundle.json", "fixed bundle output file (- to print on standard output)")
+	cmd.Flags().StringVar(&opts.relocationMap, "relocation-map", "relocation-map.json", "relocation map output file (- to print on standard output)")
 	cmd.Flags().StringVarP(&opts.targetRef, "target", "t", "", "reference where the bundle will be pushed")
 	cmd.Flags().StringSliceVar(&opts.insecureRegistries, "insecure-registries", nil, "Use plain HTTP for those registries")
+	cmd.Flags().BoolVar(&opts.autoUpdateBundle, "auto-update-bundle", false, "Updates the bundle image properties with the one resolved on the registry")
 	return cmd
 }
 
@@ -53,18 +57,21 @@ func runFixup(opts fixupOptions) error {
 	if err != nil {
 		return err
 	}
-	if err := remotes.FixupBundle(context.Background(), &b, ref, createResolver(opts.insecureRegistries), remotes.WithEventCallback(displayEvent)); err != nil {
-		return err
+
+	fixupOptions := []remotes.FixupOption{
+		remotes.WithEventCallback(displayEvent),
 	}
-	bundleJSON, err = json.MarshalIndent(b, "", "\t")
+	if opts.autoUpdateBundle {
+		fixupOptions = append(fixupOptions, remotes.WithAutoBundleUpdate())
+	}
+	relocationMap, err := remotes.FixupBundle(context.Background(), &b, ref, createResolver(opts.insecureRegistries), fixupOptions...)
 	if err != nil {
 		return err
 	}
-	if opts.output == "-" {
-		fmt.Fprintln(os.Stdout, string(bundleJSON))
-		return nil
+	if err := writeOutput(opts.bundle, b); err != nil {
+		return err
 	}
-	return ioutil.WriteFile(opts.output, bundleJSON, 0644)
+	return writeOutput(opts.relocationMap, relocationMap)
 }
 
 func displayEvent(ev remotes.FixupEvent) {
