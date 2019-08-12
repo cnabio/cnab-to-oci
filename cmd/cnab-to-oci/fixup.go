@@ -53,8 +53,7 @@ func runFixup(opts fixupOptions) error {
 	if err != nil {
 		return err
 	}
-	err = remotes.FixupBundle(context.Background(), &b, ref, createResolver(opts.insecureRegistries), remotes.WithEventCallback(displayEvent))
-	if err != nil {
+	if err := remotes.FixupBundle(context.Background(), &b, ref, createResolver(opts.insecureRegistries), remotes.WithEventCallback(displayEvent)); err != nil {
 		return err
 	}
 	bundleJSON, err = json.MarshalIndent(b, "", "\t")
