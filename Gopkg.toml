@@ -30,7 +30,7 @@
 
 [[constraint]]
   name = "github.com/deislabs/cnab-go"
-  version = "v0.2.0-beta.1"
+  revision = "v0.3.0-beta1"
 
 # Use master while we wait for https://github.com/containerd/containerd/pull/3218 to be included in the release
 [[constraint]]
