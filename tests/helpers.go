@@ -69,6 +69,9 @@ func MakeTestBundle() *bundle.Bundle {
 				Type:    []interface{}{"string", "boolean", "number"},
 				Default: "hello",
 			},
+			"output1Type": {
+				Type: "string",
+			},
 		},
 		Parameters: map[string]bundle.Parameter{
 			"param1": {
@@ -77,6 +80,14 @@ func MakeTestBundle() *bundle.Bundle {
 					EnvironmentVariable: "env_var",
 					Path:                "/some/path",
 				},
+			},
+		},
+		Outputs: map[string]bundle.Output{
+			"output1": {
+				Definition:  "output1Type",
+				Description: "magic",
+				ApplyTo:     []string{"install"},
+				Path:        "/cnab/app/outputs/magic",
 			},
 		},
 		Custom: map[string]interface{}{
