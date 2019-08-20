@@ -91,6 +91,13 @@ type bundleConfigPreparer func(blob []byte) (*PreparedBundleConfig, error)
 func prepareOCIBundleConfig(mediaType string) bundleConfigPreparer {
 	return func(blob []byte) (*PreparedBundleConfig, error) {
 		manifest := ocischemav1.Manifest{
+			Layers: []ocischemav1.Descriptor{
+				{
+					Digest:    digest.FromBytes(blob),
+					MediaType: mediaType,
+					Size:      int64(len(blob)),
+				},
+			},
 			Versioned: ocischema.Versioned{
 				SchemaVersion: OCIIndexSchemaVersion,
 			},
@@ -112,6 +119,13 @@ func prepareOCIBundleConfig(mediaType string) bundleConfigPreparer {
 func prepareNonOCIBundleConfig(blob []byte) (*PreparedBundleConfig, error) {
 	man, err := schema2.FromStruct(schema2.Manifest{
 		Versioned: schema2.SchemaVersion,
+		Layers: []distribution.Descriptor{
+			{
+				Digest:    digest.FromBytes(blob),
+				MediaType: schema2.MediaTypeImageConfig,
+				Size:      int64(len(blob)),
+			},
+		},
 		Config: distribution.Descriptor{
 			MediaType: schema2.MediaTypeImageConfig,
 			Size:      int64(len(blob)),
