@@ -1,11 +1,11 @@
-ARG ALPINE_VERSION=3.8
-ARG GO_VERSION=1.11.4
+ARG ALPINE_VERSION=3.10
+ARG GO_VERSION=1.12.9
 
 # build image
 FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} as build
 
-ARG DOCKERCLI_VERSION=18.03.1-ce
-ARG DOCKERCLI_CHANNEL=edge
+ARG DOCKERCLI_VERSION=19.03.1
+ARG DOCKERCLI_CHANNEL=stable
 
 ARG BUILDTIME
 ARG COMMIT
@@ -21,7 +21,7 @@ RUN apk add --no-cache \
   build-base
 
 # Fetch docker cli to run a registry container for e2e tests
-RUN curl -Ls https://download.docker.com/linux/static/$DOCKERCLI_CHANNEL/x86_64/docker-$DOCKERCLI_VERSION.tgz | tar -xz
+RUN curl -Ls https://download.docker.com/linux/static/${DOCKERCLI_CHANNEL}/x86_64/docker-${DOCKERCLI_VERSION}.tgz | tar -xz
 
 WORKDIR /go/src/github.com/docker/cnab-to-oci
 COPY . .
