@@ -6,7 +6,7 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.9
+      - image: circleci/golang:1.12.9
 
     #### TEMPLATE_NOTE: go expects specific checkout path representing url
     #### expecting it in the form of
@@ -16,6 +16,6 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 18.06.0-ce
+          version: 18.09.3
       # specify any bash command here prefixed with `run: `
       - run: make all-ci
