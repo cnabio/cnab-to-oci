@@ -24,6 +24,9 @@ const (
     }
   },
   "definitions": {
+    "output1Type": {
+      "type": "string"
+    },
     "param1Type": {
      "default": "hello",
       "enum": [
@@ -47,6 +50,16 @@ const (
       }
     }
   },
+  "outputs": {
+    "output1": {
+      "definition": "output1Type",
+      "applyTo": [
+        "install"
+      ],
+      "description": "magic",
+      "path": "/cnab/app/outputs/magic"
+    }
+  },
   "credentials": {
     "cred-1": {
       "path": "/some/path",
@@ -63,7 +76,7 @@ const (
   "manifests": [
     {
       "mediaType":"application/vnd.oci.image.manifest.v1+json",
-      "digest":"sha256:7867dc7fbfd606969a70686127d9c1a6c78a0b0b87fceea41452416e9d8146df",
+      "digest":"sha256:75b3dd7d430a5c5f20908dcb63099adedd555850735dbae833ab3312c6e42208",
       "size":188,
       "annotations":{
         "io.cnab.manifest.type":"config"
@@ -165,7 +178,7 @@ func ExamplePush() {
 	// Output:
 	// {
 	//   "mediaType": "application/vnd.oci.image.index.v1+json",
-	//   "digest": "sha256:7c1712e5dd027da28d3634a23a3e70ddf573b2f50ba2c211accdd929bb4c4782",
+	//   "digest": "sha256:ad9bf48bfc84342aae1017a486722b7b22c82a5f31bb2c4f6da81255e5aa09b5",
 	//   "size": 1363
 	// }
 }
