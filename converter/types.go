@@ -109,14 +109,24 @@ func prepareOCIBundleConfig(mediaType string) bundleConfigPreparer {
 	}
 }
 
+func nonOCIDescriptorOf(blob []byte) distribution.Descriptor {
+	return distribution.Descriptor{
+		MediaType: schema2.MediaTypeImageConfig,
+		Size:      int64(len(blob)),
+		Digest:    digest.FromBytes(blob),
+	}
+}
+
 func prepareNonOCIBundleConfig(blob []byte) (*PreparedBundleConfig, error) {
+	desc := nonOCIDescriptorOf(blob)
 	man, err := schema2.FromStruct(schema2.Manifest{
 		Versioned: schema2.SchemaVersion,
-		Config: distribution.Descriptor{
-			MediaType: schema2.MediaTypeImageConfig,
-			Size:      int64(len(blob)),
-			Digest:    digest.FromBytes(blob),
+		// Add a descriptor for the configuration because some registries
+		// require the layers property to be defined and non-empty
+		Layers: []distribution.Descriptor{
+			desc,
 		},
+		Config: desc,
 	})
 	if err != nil {
 		return nil, err
