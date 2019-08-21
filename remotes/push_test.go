@@ -3,6 +3,7 @@ package remotes
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -119,6 +120,22 @@ const (
     "org.opencontainers.image.version": "0.1.0"
   }
 }`
+	expectedConfigManifest = `{
+   "schemaVersion": 2,
+   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+   "config": {
+      "mediaType": "application/vnd.docker.container.image.v1+json",
+      "size": 539,
+      "digest": "sha256:583d58ecba680e28cd4f55fa673d377915259dfb5a5a09b79f4196e53517495f"
+   },
+   "layers": [
+      {
+         "mediaType": "application/vnd.docker.container.image.v1+json",
+         "size": 539,
+         "digest": "sha256:583d58ecba680e28cd4f55fa673d377915259dfb5a5a09b79f4196e53517495f"
+      }
+   ]
+}`
 )
 
 func TestPush(t *testing.T) {
@@ -148,6 +165,29 @@ func TestPush(t *testing.T) {
 	assert.Equal(t, "my.registry/namespace/my-app:my-tag", resolver.pushedReferences[2])
 	assert.Equal(t, ocischemav1.MediaTypeImageIndex, pusher.pushedDescriptors[2].MediaType)
 	assert.Equal(t, oneLiner(expectedBundleManifest), pusher.buffers[2].String())
+}
+
+func TestFallbackConfigManifest(t *testing.T) {
+	// Make the pusher return an error for the first two calls
+	// so that the fallbacks kick in and we get the non-oci
+	// config manifest.
+	pusher := newMockPusher([]error{
+		errors.New("1"),
+		errors.New("2"),
+		nil,
+		nil,
+		nil,
+		nil,
+		nil})
+	resolver := &mockResolver{pusher: pusher}
+	b := tests.MakeTestBundle()
+	ref, err := reference.ParseNamed("my.registry/namespace/my-app:my-tag")
+	assert.NilError(t, err)
+
+	// push the bundle
+	_, err = Push(context.Background(), b, ref, resolver, true)
+	assert.NilError(t, err)
+	assert.Equal(t, expectedConfigManifest, pusher.buffers[3].String())
 }
 
 func oneLiner(s string) string {

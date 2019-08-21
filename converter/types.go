@@ -91,13 +91,6 @@ type bundleConfigPreparer func(blob []byte) (*PreparedBundleConfig, error)
 func prepareOCIBundleConfig(mediaType string) bundleConfigPreparer {
 	return func(blob []byte) (*PreparedBundleConfig, error) {
 		manifest := ocischemav1.Manifest{
-			Layers: []ocischemav1.Descriptor{
-				{
-					Digest:    digest.FromBytes(blob),
-					MediaType: mediaType,
-					Size:      int64(len(blob)),
-				},
-			},
 			Versioned: ocischema.Versioned{
 				SchemaVersion: OCIIndexSchemaVersion,
 			},
@@ -116,21 +109,24 @@ func prepareOCIBundleConfig(mediaType string) bundleConfigPreparer {
 	}
 }
 
+func nonOCIDescriptorOf(blob []byte) distribution.Descriptor {
+	return distribution.Descriptor{
+		MediaType: schema2.MediaTypeImageConfig,
+		Size:      int64(len(blob)),
+		Digest:    digest.FromBytes(blob),
+	}
+}
+
 func prepareNonOCIBundleConfig(blob []byte) (*PreparedBundleConfig, error) {
+	desc := nonOCIDescriptorOf(blob)
 	man, err := schema2.FromStruct(schema2.Manifest{
 		Versioned: schema2.SchemaVersion,
+		// Add a descriptor for the configuration because some registries
+		// require the layers property to be defined and non-empty
 		Layers: []distribution.Descriptor{
-			{
-				Digest:    digest.FromBytes(blob),
-				MediaType: schema2.MediaTypeImageConfig,
-				Size:      int64(len(blob)),
-			},
+			desc,
 		},
-		Config: distribution.Descriptor{
-			MediaType: schema2.MediaTypeImageConfig,
-			Size:      int64(len(blob)),
-			Digest:    digest.FromBytes(blob),
-		},
+		Config: desc,
 	})
 	if err != nil {
 		return nil, err

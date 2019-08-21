@@ -37,15 +37,29 @@ func (r *mockResolver) Pusher(_ context.Context, ref string) (remotes.Pusher, er
 type mockPusher struct {
 	pushedDescriptors []ocischemav1.Descriptor
 	buffers           []*bytes.Buffer
+	returnErrorValues []error
+}
+
+func newMockPusher(ret []error) *mockPusher {
+	return &mockPusher{
+		pushedDescriptors: []ocischemav1.Descriptor{},
+		buffers:           []*bytes.Buffer{},
+		returnErrorValues: ret,
+	}
 }
 
 func (p *mockPusher) Push(ctx context.Context, d ocischemav1.Descriptor) (content.Writer, error) {
 	p.pushedDescriptors = append(p.pushedDescriptors, d)
 	buf := &bytes.Buffer{}
 	p.buffers = append(p.buffers, buf)
+	var err error
+	if p.returnErrorValues != nil {
+		err = p.returnErrorValues[0]
+		p.returnErrorValues = p.returnErrorValues[1:]
+	}
 	return &mockWriter{
 		WriteCloser: nopWriteCloser{Buffer: buf},
-	}, nil
+	}, err
 }
 
 // Mock content.Writer interface
