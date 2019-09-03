@@ -29,9 +29,10 @@ LDFLAGS := "-s -w \
   -X $(PKG_NAME)/internal.BuildTime=$(BUILDTIME)"
 
 BUILD_ARGS := \
-  --build-arg BUILDTIME=$(BUILDTIME) \
-  --build-arg COMMIT=$(COMMIT)       \
-  --build-arg TAG=$(TAG)
+  --build-arg BUILDTIME \
+  --build-arg COMMIT    \
+  --build-arg TAG \
+  --build-arg=GOPROXY
 
 GO_BUILD := CGO_ENABLED=0 go build -ldflags=$(LDFLAGS)
 GO_TEST := CGO_ENABLED=0 go test -ldflags=$(LDFLAGS) -failfast
