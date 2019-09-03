@@ -10,6 +10,7 @@ ARG DOCKERCLI_CHANNEL=stable
 ARG BUILDTIME
 ARG COMMIT
 ARG TAG
+ARG GOPROXY
 
 RUN apk add --no-cache \
   bash \
