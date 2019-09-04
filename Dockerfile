@@ -1,5 +1,5 @@
 ARG ALPINE_VERSION=3.10
-ARG GO_VERSION=1.12.9
+ARG GO_VERSION=1.13.0
 
 # build image
 FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} as build
