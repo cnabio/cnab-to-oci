@@ -8,11 +8,6 @@ jobs:
       # specify the version
       - image: circleci/golang:1.12.9
 
-    #### TEMPLATE_NOTE: go expects specific checkout path representing url
-    #### expecting it in the form of
-    ####   /go/src/github.com/circleci/go-tool
-    ####   /go/src/bitbucket.org/circleci/go-tool
-    working_directory: /go/src/github.com/docker/cnab-to-oci
     steps:
       - checkout
       - setup_remote_docker:
