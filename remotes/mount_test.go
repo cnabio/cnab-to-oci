@@ -77,6 +77,6 @@ func TestMountOnPush(t *testing.T) {
 	assert.NilError(t, err)
 
 	desc := ocischemav1.Descriptor{}
-	pushWithAnnotation(context.TODO(), r, ref, desc)
+	_, _ = pushWithAnnotation(context.TODO(), r, ref, desc)
 	assert.Equal(t, hasMounted, true)
 }

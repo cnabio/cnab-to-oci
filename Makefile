@@ -48,8 +48,7 @@ check_go_env:
 
 get-tools:
 	go get golang.org/x/tools/cmd/goimports
-	go get github.com/alecthomas/gometalinter
-	gometalinter --install
+	go get github.com/golangci/golangci-lint/cmd/golangci-lint
 
 # Default build
 build: bin/cnab-to-oci
@@ -84,6 +83,6 @@ format: get-tools
 	done
 
 lint: get-tools
-	gometalinter --config=gometalinter.json ./...
+	golangci-lint run ./...
 
 .PHONY: all get-tools build clean test test-unit test-e2e e2e-image lint

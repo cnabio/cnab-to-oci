@@ -81,7 +81,7 @@ func ExamplePull() {
 		panic(err)
 	}
 
-	resultBundle.WriteTo(os.Stdout)
+	resultBundle.WriteTo(os.Stdout) //nolint:errcheck
 	buf, err := json.Marshal(relocationMap)
 	if err != nil {
 		panic(err)
