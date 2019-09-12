@@ -3,12 +3,13 @@ package converter
 import (
 	"testing"
 
+	"github.com/deislabs/cnab-go/bundle"
 	"gotest.tools/assert"
 )
 
 func TestPrepareForPush(t *testing.T) {
-	b := &BundleConfig{}
-	prepared, err := b.PrepareForPush()
+	b := &bundle.Bundle{}
+	prepared, err := PrepareForPush(b)
 	assert.NilError(t, err)
 
 	// First try with OCI format and specific CNAB media type. Fallback should be set.

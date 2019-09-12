@@ -2,18 +2,19 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
+	"github.com/docker/go/canonical/json"
 	"github.com/spf13/cobra"
 )
 
 type pullOptions struct {
-	output             string
+	bundle             string
+	relocationMap      string
 	targetRef          string
 	insecureRegistries []string
 }
@@ -30,7 +31,8 @@ func pullCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.output, "output", "o", "pulled.json", "output file")
+	cmd.Flags().StringVar(&opts.bundle, "bundle", "pulled.json", "bundle output file (- to print on standard output)")
+	cmd.Flags().StringVar(&opts.relocationMap, "relocation-map", "relocation-map.json", "relocation map output file (- to print on standard output)")
 	cmd.Flags().StringSliceVar(&opts.insecureRegistries, "insecure-registries", nil, "Use plain HTTP for those registries")
 	return cmd
 }
@@ -40,17 +42,25 @@ func runPull(opts pullOptions) error {
 	if err != nil {
 		return err
 	}
-	b, err := remotes.Pull(context.Background(), ref, createResolver(opts.insecureRegistries))
+
+	b, relocationMap, err := remotes.Pull(context.Background(), ref, createResolver(opts.insecureRegistries))
 	if err != nil {
 		return err
 	}
-	bytes, err := json.MarshalIndent(b, "", "\t")
+	if err := writeOutput(opts.bundle, b); err != nil {
+		return err
+	}
+	return writeOutput(opts.relocationMap, relocationMap)
+}
+
+func writeOutput(file string, data interface{}) error {
+	bytes, err := json.MarshalCanonical(data)
 	if err != nil {
 		return err
 	}
-	if opts.output == "-" {
+	if file == "-" {
 		fmt.Fprintln(os.Stdout, string(bytes))
 		return nil
 	}
-	return ioutil.WriteFile(opts.output, bytes, 0644)
+	return ioutil.WriteFile(file, bytes, 0644)
 }

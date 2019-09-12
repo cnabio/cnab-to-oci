@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 
-	"github.com/docker/cnab-to-oci/converter"
 	"github.com/docker/cnab-to-oci/tests"
 	"github.com/docker/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -30,8 +30,8 @@ func TestPull(t *testing.T) {
    "layers": null
 }`)
 
-	config := converter.CreateBundleConfig(tests.MakeTestBundle())
-	bufBundleConfig, err := json.Marshal(config)
+	b := tests.MakeTestBundle()
+	bufBundle, err := json.Marshal(b)
 	assert.NilError(t, err)
 
 	fetcher := &mockFetcher{indexBuffers: []*bytes.Buffer{
@@ -40,7 +40,7 @@ func TestPull(t *testing.T) {
 		// Bundle config manifest
 		bytes.NewBuffer(bundleConfigManifestDescriptor),
 		// Bundle config
-		bytes.NewBuffer(bufBundleConfig),
+		bytes.NewBuffer(bufBundle),
 	}}
 	resolver := &mockResolver{
 		fetcher: fetcher,
@@ -60,7 +60,7 @@ func TestPull(t *testing.T) {
 	assert.NilError(t, err)
 
 	// Pull the CNAB and get the bundle
-	b, err := Pull(context.Background(), ref, resolver)
+	b, _, err = Pull(context.Background(), ref, resolver)
 	assert.NilError(t, err)
 	expectedBundle := tests.MakeTestBundle()
 	assert.DeepEqual(t, expectedBundle, b)
@@ -75,15 +75,22 @@ func ExamplePull() {
 		panic(err)
 	}
 
-	// Pull the CNAB and get the bundle
-	resultBundle, err := Pull(context.Background(), ref, resolver)
+	// Pull the CNAB, get the bundle and the associated relocation map
+	resultBundle, relocationMap, err := Pull(context.Background(), ref, resolver)
 	if err != nil {
 		panic(err)
 	}
 
 	resultBundle.WriteTo(os.Stdout)
+	buf, err := json.Marshal(relocationMap)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("\n")
+	fmt.Println(string(buf))
 	// Output:
-	//{"actions":{"action-1":{"modifies":true}},"credentials":{"cred-1":{"env":"env-var","path":"/some/path"}},"definitions":{"param1Type":{"default":"hello","enum":["value1",true,1],"type":["string","boolean","number"]}},"description":"description","images":{"image-1":{"description":"","image":"my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341","imageType":"oci","mediaType":"application/vnd.oci.image.manifest.v1+json","size":507}},"invocationImages":[{"image":"my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341","imageType":"docker","mediaType":"application/vnd.docker.distribution.manifest.v2+json","size":506}],"keywords":["keyword1","keyword2"],"maintainers":[{"email":"docker@docker.com","name":"docker","url":"docker.com"}],"name":"my-app","parameters":{"param1":{"definition":"param1Type","destination":{"env":"env_var","path":"/some/path"}}},"schemaVersion":"v1.0.0-WD","version":"0.1.0"}
+	//{"actions":{"action-1":{"modifies":true}},"credentials":{"cred-1":{"env":"env-var","path":"/some/path"}},"custom":{"my-key":"my-value"},"definitions":{"output1Type":{"type":"string"},"param1Type":{"default":"hello","enum":["value1",true,1],"type":["string","boolean","number"]}},"description":"description","images":{"another-image":{"contentDigest":"sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0342","description":"","image":"my.registry/namespace/another-image","imageType":"oci","mediaType":"application/vnd.oci.image.manifest.v1+json","size":507},"image-1":{"contentDigest":"sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341","description":"","image":"my.registry/namespace/image-1","imageType":"oci","mediaType":"application/vnd.oci.image.manifest.v1+json","size":507}},"invocationImages":[{"contentDigest":"sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343","image":"my.registry/namespace/my-app-invoc","imageType":"docker","mediaType":"application/vnd.docker.distribution.manifest.v2+json","size":506}],"keywords":["keyword1","keyword2"],"maintainers":[{"email":"docker@docker.com","name":"docker","url":"docker.com"}],"name":"my-app","outputs":{"output1":{"applyTo":["install"],"definition":"output1Type","description":"magic","path":"/cnab/app/outputs/magic"}},"parameters":{"param1":{"definition":"param1Type","destination":{"env":"env_var","path":"/some/path"}}},"schemaVersion":"v1.0.0-WD","version":"0.1.0"}
+	//{"my.registry/namespace/image-1":"my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341","my.registry/namespace/my-app-invoc":"my.registry/namespace/my-app@sha256:d59a1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0341"}
 }
 
 const (
@@ -137,55 +144,21 @@ const (
    },
    "layers": null
 }`
-
-	bufBundleConfig = `{
-  "schema_version": "v1.0.0-WD",
-  "actions": {
-    "action-1": {
-      "modifies": true
-    }
-  },
-  "definitions": {
-    "param1Type": {
-     "default": "hello",
-      "enum": [
-          "value1",
-          true,
-          1
-      ],
-      "type": [
-          "string", 
-          "boolean", 
-          "number"
-      ]
-    }
-  },
-  "parameters": {
-    "param1": {
-      "definition": "param1Type",
-      "destination": {
-        "path": "/some/path",
-        "env": "env_var"
-      }
-    }
-  },
-  "credentials": {
-    "cred-1": {
-      "path": "/some/path",
-      "env": "env-var"
-    }
-  }
-}`
 )
 
 func createExampleResolver() *mockResolver {
+	b := tests.MakeTestBundle()
+	bufBundleConfig, err := json.Marshal(b)
+	if err != nil {
+		panic(err)
+	}
 	buf := []*bytes.Buffer{
 		// Bundle index
 		bytes.NewBuffer([]byte(bufBundleManifest)),
 		// Bundle config manifest
 		bytes.NewBuffer([]byte(bundleConfigManifestDescriptor)),
 		// Bundle config
-		bytes.NewBuffer([]byte(bufBundleConfig)),
+		bytes.NewBuffer(bufBundleConfig),
 	}
 	fetcher := &mockFetcher{indexBuffers: buf}
 	pusher := &mockPusher{}
