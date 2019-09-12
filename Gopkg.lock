@@ -74,14 +74,14 @@
   revision = "004b46473808b3e7a4a3049c20e4376c91eb966d"
 
 [[projects]]
-  digest = "1:fe5c5c8c7ca3074c4e2df42c39b7572facf9b90280eb74d635bd5140c4f03535"
+  digest = "1:534ad88d138058854fb0029442cb101231fca8f3a368db486f9d76fecd970456"
   name = "github.com/deislabs/cnab-go"
   packages = [
     "bundle",
     "bundle/definition",
   ]
   pruneopts = "UT"
-  revision = "v0.3.2-beta1"
+  revision = "v0.4.0-beta1"
 
 [[projects]]
   digest = "1:982e3778851f5bb802c164c0baffa67eb7447b189211a08dd18acaa03b4d30c0"
