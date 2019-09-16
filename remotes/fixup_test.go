@@ -10,7 +10,6 @@ import (
 
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/platforms"
-	"github.com/containerd/containerd/remotes"
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cnab-to-oci/relocation"
 	"github.com/docker/distribution/reference"
@@ -391,11 +390,6 @@ func newTestManifest(plats ...string) *testManifest {
 		})
 	}
 	return m
-}
-
-type fetchSetup struct {
-	descriptor ocischemav1.Descriptor
-	fetcher    remotes.Fetcher
 }
 
 type bytesFetcher []byte
