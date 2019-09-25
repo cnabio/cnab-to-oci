@@ -161,9 +161,15 @@ func fixupBaseImage(ctx context.Context,
 	if err != nil {
 		return imageFixupInfo{}, err
 	}
-	sourceImageRef, err := reference.ParseNormalizedNamed(baseImage.Image)
+
+	image := baseImage.Image
+	if baseImage.Digest != "" {
+		image = baseImage.Image + "@" + baseImage.Digest
+	}
+
+	sourceImageRef, err := reference.ParseNormalizedNamed(image)
 	if err != nil {
-		return imageFixupInfo{}, fmt.Errorf("%q is not a valid image reference for %q: %s", baseImage.Image, targetRef, err)
+		return imageFixupInfo{}, fmt.Errorf("%q is not a valid image reference for %q: %s", image, targetRef, err)
 	}
 	sourceImageRef = reference.TagNameOnly(sourceImageRef)
 
