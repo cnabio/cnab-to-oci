@@ -50,7 +50,7 @@ func TestFixupBundleWithAutoUpdate(t *testing.T) {
 		},
 	}
 	b := &bundle.Bundle{
-		SchemaVersion: "v1.0.0-WD",
+		SchemaVersion: "v1.0.0",
 		InvocationImages: []bundle.InvocationImage{
 			{
 				BaseImage: bundle.BaseImage{
@@ -75,7 +75,7 @@ func TestFixupBundleWithAutoUpdate(t *testing.T) {
 	_, err = FixupBundle(context.TODO(), b, ref, resolver, WithAutoBundleUpdate())
 	assert.NilError(t, err)
 	expectedBundle := &bundle.Bundle{
-		SchemaVersion: "v1.0.0-WD",
+		SchemaVersion: "v1.0.0",
 		InvocationImages: []bundle.InvocationImage{
 			{
 				BaseImage: bundle.BaseImage{
@@ -127,7 +127,7 @@ func TestFixupBundleFailsWithDifferentDigests(t *testing.T) {
 		},
 	}
 	b := &bundle.Bundle{
-		SchemaVersion: "v1.0.0-WD",
+		SchemaVersion: "v1.0.0",
 		InvocationImages: []bundle.InvocationImage{
 			{
 				BaseImage: bundle.BaseImage{
@@ -172,7 +172,7 @@ func TestFixupBundleFailsWithDifferentSizes(t *testing.T) {
 	}
 
 	b := &bundle.Bundle{
-		SchemaVersion: "v1.0.0-WD",
+		SchemaVersion: "v1.0.0",
 		InvocationImages: []bundle.InvocationImage{
 			{
 				BaseImage: bundle.BaseImage{
@@ -217,7 +217,7 @@ func TestFixupBundleFailsWithDifferentMediaTypes(t *testing.T) {
 	}
 
 	b := &bundle.Bundle{
-		SchemaVersion: "v1.0.0-WD",
+		SchemaVersion: "v1.0.0",
 		InvocationImages: []bundle.InvocationImage{
 			{
 				BaseImage: bundle.BaseImage{

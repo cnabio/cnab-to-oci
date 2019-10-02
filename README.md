@@ -361,7 +361,7 @@ The following is an example of an OCI image index sent to the registry.
   ],
   "annotations": {
     "io.cnab.keywords": "[\"keyword1\",\"keyword2\"]",
-    "io.cnab.runtime_version": "v1.0.0-WD",
+    "io.cnab.runtime_version": "v1.0.0",
     "org.opencontainers.artifactType": "application/vnd.cnab.manifest.v1",
     "org.opencontainers.image.authors": "[{\"name\":\"docker\",\"email\":\"docker@docker.com\",\"url\":\"docker.com\"}]",
     "org.opencontainers.image.description": "description",
