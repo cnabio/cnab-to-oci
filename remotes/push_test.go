@@ -22,7 +22,7 @@ const (
   "manifests": [
     {
       "mediaType":"application/vnd.oci.image.manifest.v1+json",
-      "digest":"sha256:519a4617071a6c4dc66df2bbd988a34226113933de963b5b75704d6f63b2970a",
+      "digest":"sha256:91ada58e30bc0aea920e69a9356085534ce31c50700e650c96b432fc3a5d1661",
       "size":189,
       "annotations":{
         "io.cnab.manifest.type":"config"
@@ -57,7 +57,7 @@ const (
   ],
   "annotations": {
     "io.cnab.keywords": "[\"keyword1\",\"keyword2\"]",
-    "io.cnab.runtime_version": "v1.0.0-WD",
+    "io.cnab.runtime_version": "v1.0.0",
     "org.opencontainers.artifactType": "application/vnd.cnab.manifest.v1",
     "org.opencontainers.image.authors": "[{\"name\":\"docker\",\"email\":\"docker@docker.com\",\"url\":\"docker.com\"}]",
     "org.opencontainers.image.description": "description",
@@ -70,14 +70,14 @@ const (
    "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
    "config": {
       "mediaType": "application/vnd.docker.container.image.v1+json",
-      "size": 1487,
-      "digest": "sha256:0391c78ee4a5dfaacc7426078ff37fa53d9f64370c76e1716d94ddcf893a106d"
+      "size": 1484,
+      "digest": "sha256:e978bf2a3c57b25fc3bb7f1adccb6fa0f0284d38163d5faffce7bf5fca3f39b3"
    },
    "layers": [
       {
          "mediaType": "application/vnd.docker.container.image.v1+json",
-         "size": 1487,
-         "digest": "sha256:0391c78ee4a5dfaacc7426078ff37fa53d9f64370c76e1716d94ddcf893a106d"
+         "size": 1484,
+         "digest": "sha256:e978bf2a3c57b25fc3bb7f1adccb6fa0f0284d38163d5faffce7bf5fca3f39b3"
       }
    ]
 }`
@@ -166,8 +166,8 @@ func ExamplePush() {
 	// Output:
 	// {
 	//   "mediaType": "application/vnd.oci.image.index.v1+json",
-	//   "digest": "sha256:df2c5a3ef8b04f87439f22fc5179326a8e2e84ca94e3e9eac630952ef711b6ae",
-	//   "size": 1363
+	//   "digest": "sha256:4cfae04045c6f0fd14330ab86dea9694fb19ce9602ba2da0af8c826fc0053631",
+	//   "size": 1360
 	// }
 }
 

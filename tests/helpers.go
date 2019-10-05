@@ -12,7 +12,7 @@ import (
 // MakeTestBundle creates a simple bundle for tests
 func MakeTestBundle() *bundle.Bundle {
 	return &bundle.Bundle{
-		SchemaVersion: "v1.0.0-WD",
+		SchemaVersion: "v1.0.0",
 		Actions: map[string]bundle.Action{
 			"action-1": {
 				Modifies: true,
@@ -108,7 +108,7 @@ func MakeTestOCIIndex() *ocischemav1.Index {
 			SchemaVersion: 2,
 		},
 		Annotations: map[string]string{
-			"io.cnab.runtime_version":         "v1.0.0-WD",
+			"io.cnab.runtime_version":         "v1.0.0",
 			ocischemav1.AnnotationTitle:       "my-app",
 			ocischemav1.AnnotationVersion:     "0.1.0",
 			ocischemav1.AnnotationDescription: "description",
