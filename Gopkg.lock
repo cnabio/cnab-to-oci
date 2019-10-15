@@ -118,20 +118,26 @@
   revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
 
 [[projects]]
-  digest = "1:f4ad803466fb70bc85d73f53aa3e7ac5809fed2282dc0bd682011433de557090"
+  digest = "1:b3ef7d43652849604068a8801ad67c4147a217c2413ad4c213eaeb451f81e12a"
   name = "github.com/docker/docker"
   packages = [
+    "api",
     "api/types",
     "api/types/blkiodev",
     "api/types/container",
+    "api/types/events",
     "api/types/filters",
+    "api/types/image",
     "api/types/mount",
     "api/types/network",
     "api/types/registry",
     "api/types/strslice",
     "api/types/swarm",
     "api/types/swarm/runtime",
+    "api/types/time",
     "api/types/versions",
+    "api/types/volume",
+    "client",
     "errdefs",
     "pkg/homedir",
     "pkg/idtools",
@@ -469,6 +475,10 @@
     "github.com/docker/distribution/manifest/schema2",
     "github.com/docker/distribution/reference",
     "github.com/docker/distribution/registry/client/auth",
+    "github.com/docker/docker/api/types",
+    "github.com/docker/docker/api/types/registry",
+    "github.com/docker/docker/client",
+    "github.com/docker/docker/pkg/jsonmessage",
     "github.com/docker/docker/registry",
     "github.com/docker/go/canonical/json",
     "github.com/opencontainers/go-digest",
