@@ -2,8 +2,17 @@ package remotes
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+
+	"github.com/docker/cli/cli/config"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/jsonmessage"
+	"github.com/docker/docker/registry"
 
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
@@ -13,6 +22,7 @@ import (
 	"github.com/docker/cnab-to-oci/converter"
 	"github.com/docker/cnab-to-oci/relocation"
 	"github.com/docker/distribution/reference"
+	registrytypes "github.com/docker/docker/api/types/registry"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -234,4 +244,54 @@ func pushBundleConfigDescriptor(ctx context.Context, name string, resolver remot
 		return ocischemav1.Descriptor{}, err
 	}
 	return descriptor, nil
+}
+
+func pushTaggedImage(ctx context.Context, imageClient client.ImageAPIClient, targetRef reference.Named) error {
+	repoInfo, err := registry.ParseRepositoryInfo(targetRef)
+	if err != nil {
+		return err
+	}
+
+	authConfig := resolveAuthConfig(repoInfo.Index)
+	encodedAuth, err := encodeAuthToBase64(authConfig)
+	if err != nil {
+		return err
+	}
+
+	reader, err := imageClient.ImagePush(ctx, targetRef.String(), types.ImagePushOptions{
+		RegistryAuth: encodedAuth,
+	})
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+	return jsonmessage.DisplayJSONMessagesStream(reader, ioutil.Discard, 0, false, nil)
+}
+
+func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
+	buf, err := json.Marshal(authConfig)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(buf), nil
+}
+
+func resolveAuthConfig(index *registrytypes.IndexInfo) types.AuthConfig {
+	cfg := config.LoadDefaultConfigFile(os.Stderr)
+
+	hostName := index.Name
+	if index.Official {
+		hostName = registry.IndexServer
+	}
+
+	configs, err := cfg.GetAllCredentials()
+	if err != nil {
+		return types.AuthConfig{}
+	}
+
+	authConfig, ok := configs[hostName]
+	if !ok {
+		return types.AuthConfig{}
+	}
+	return authConfig
 }
