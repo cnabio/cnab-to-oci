@@ -233,7 +233,7 @@ func pushImageToTarget(ctx context.Context, baseImage *bundle.BaseImage, cfg fix
 		return ocischemav1.Descriptor{}, fmt.Errorf("failed to push image %q, make sure the image exists locally: %s", baseImage.Image, err)
 	}
 
-	if err := pushTaggedImage(ctx, cfg.imageClient, cfg.targetRef); err != nil {
+	if err := pushTaggedImage(ctx, cfg.imageClient, cfg.targetRef, cfg.pushOut); err != nil {
 		return ocischemav1.Descriptor{}, fmt.Errorf("failed to push image %q: %s", baseImage.Image, err)
 	}
 

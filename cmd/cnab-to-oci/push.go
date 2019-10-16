@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cnab-to-oci/remotes"
@@ -79,7 +80,7 @@ func runPush(opts pushOptions) error {
 		if err != nil {
 			return err
 		}
-		fixupOptions = append(fixupOptions, remotes.WithPushImages(cli))
+		fixupOptions = append(fixupOptions, remotes.WithPushImages(cli, os.Stdout))
 	}
 	relocationMap, err := remotes.FixupBundle(context.Background(), &b, ref, resolver, fixupOptions...)
 	if err != nil {

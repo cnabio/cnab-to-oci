@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/docker/cli/cli/config"
@@ -246,7 +246,7 @@ func pushBundleConfigDescriptor(ctx context.Context, name string, resolver remot
 	return descriptor, nil
 }
 
-func pushTaggedImage(ctx context.Context, imageClient client.ImageAPIClient, targetRef reference.Named) error {
+func pushTaggedImage(ctx context.Context, imageClient client.ImageAPIClient, targetRef reference.Named, out io.Writer) error {
 	repoInfo, err := registry.ParseRepositoryInfo(targetRef)
 	if err != nil {
 		return err
@@ -265,7 +265,7 @@ func pushTaggedImage(ctx context.Context, imageClient client.ImageAPIClient, tar
 		return err
 	}
 	defer reader.Close()
-	return jsonmessage.DisplayJSONMessagesStream(reader, ioutil.Discard, 0, false, nil)
+	return jsonmessage.DisplayJSONMessagesStream(reader, out, 0, false, nil)
 }
 
 func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
