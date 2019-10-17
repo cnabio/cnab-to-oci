@@ -45,8 +45,7 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  branch = "master"
-  digest = "1:79126780338b1e3117f1b374fc1556f38bf5eacc92423c3c52c9895305e0ade9"
+  digest = "1:c77bcc6d6d42072339b1850b83aea8975115934ed7b3154a5d3c3b6464595bcb"
   name = "github.com/containerd/containerd"
   packages = [
     "archive/compression",
@@ -63,7 +62,8 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "9d4fc1d405d5648b20845325913e77512dcf6d88"
+  revision = "36cf5b690dcc00ff0f34ff7799209050c3d0c59a"
+  version = "v1.3.0"
 
 [[projects]]
   branch = "master"
