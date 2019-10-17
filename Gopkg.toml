@@ -30,28 +30,19 @@
 
 [[constraint]]
   name = "github.com/deislabs/cnab-go"
-  revision = "v0.4.0-beta1"
+  version = "v0.7.1-beta1"
 
-# Use master while we wait for https://github.com/containerd/containerd/pull/3218 to be included in the release
 [[constraint]]
   name = "github.com/containerd/containerd"
-  branch = "master"
-
-[[override]]
-  name = "github.com/docker/cli"
-  revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
+  version = "v1.3.0"
 
 [[constraint]]
   name = "github.com/docker/distribution"
-  revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
-
-[[override]]
-  name = "github.com/docker/docker"
-  revision = "6e3113f700dea1bf2785d94731b4b5a1e602d9ab"
+  version = "v2.7.1"
 
 [[override]]
   name = "github.com/docker/docker-credential-helpers"
-  revision = "5241b46610f2491efdf9d1c85f1ddf5b02f6d962"
+  version = "v0.6.3"
 
 [prune]
   go-tests = true

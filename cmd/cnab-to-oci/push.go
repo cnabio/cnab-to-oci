@@ -6,10 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
+	"github.com/docker/docker/client"
 	"github.com/spf13/cobra"
 )
 
@@ -21,6 +23,7 @@ type pushOptions struct {
 	invocationPlatforms []string
 	componentPlatforms  []string
 	autoUpdateBundle    bool
+	pushImages          bool
 }
 
 func pushCmd() *cobra.Command {
@@ -44,6 +47,7 @@ func pushCmd() *cobra.Command {
 	cmd.Flags().StringSliceVar(&opts.invocationPlatforms, "invocation-platforms", nil, "Platforms to push (for multi-arch invocation images)")
 	cmd.Flags().StringSliceVar(&opts.componentPlatforms, "component-platforms", nil, "Platforms to push (for multi-arch component images)")
 	cmd.Flags().BoolVar(&opts.autoUpdateBundle, "auto-update-bundle", false, "Updates the bundle image properties with the one resolved on the registry")
+	cmd.Flags().BoolVar(&opts.pushImages, "push-images", true, "Allow to push missing images in the registry that are available in the local docker daemon image store")
 
 	return cmd
 }
@@ -70,6 +74,13 @@ func runPush(opts pushOptions) error {
 	}
 	if opts.autoUpdateBundle {
 		fixupOptions = append(fixupOptions, remotes.WithAutoBundleUpdate())
+	}
+	if opts.pushImages {
+		cli, err := client.NewClientWithOpts(client.FromEnv)
+		if err != nil {
+			return err
+		}
+		fixupOptions = append(fixupOptions, remotes.WithPushImages(cli, os.Stdout))
 	}
 	relocationMap, err := remotes.FixupBundle(context.Background(), &b, ref, resolver, fixupOptions...)
 	if err != nil {

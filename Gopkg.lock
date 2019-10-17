@@ -45,8 +45,7 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  branch = "master"
-  digest = "1:79126780338b1e3117f1b374fc1556f38bf5eacc92423c3c52c9895305e0ade9"
+  digest = "1:c77bcc6d6d42072339b1850b83aea8975115934ed7b3154a5d3c3b6464595bcb"
   name = "github.com/containerd/containerd"
   packages = [
     "archive/compression",
@@ -63,7 +62,8 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "9d4fc1d405d5648b20845325913e77512dcf6d88"
+  revision = "36cf5b690dcc00ff0f34ff7799209050c3d0c59a"
+  version = "v1.3.0"
 
 [[projects]]
   branch = "master"
@@ -74,14 +74,15 @@
   revision = "004b46473808b3e7a4a3049c20e4376c91eb966d"
 
 [[projects]]
-  digest = "1:534ad88d138058854fb0029442cb101231fca8f3a368db486f9d76fecd970456"
+  digest = "1:5aff2b66b4048f665096e38d8aeeec00e370348861f31358e9e174c177e81000"
   name = "github.com/deislabs/cnab-go"
   packages = [
     "bundle",
     "bundle/definition",
   ]
   pruneopts = "UT"
-  revision = "v0.4.0-beta1"
+  revision = "a1f17dcdaaff3e06c95ed85c3a34c21c35833831"
+  version = "v0.7.1-beta1"
 
 [[projects]]
   digest = "1:982e3778851f5bb802c164c0baffa67eb7447b189211a08dd18acaa03b4d30c0"
@@ -96,7 +97,7 @@
   revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
 
 [[projects]]
-  digest = "1:a3fb9b04b18e11842fdcb83fe3cdadebeee5adeee321f1048d61593345439491"
+  digest = "1:f5b3251e0108c8186e46628fad8594b5b6a2ec8790068ab7c922199b6b018d2e"
   name = "github.com/docker/distribution"
   packages = [
     ".",
@@ -115,23 +116,30 @@
     "registry/storage/cache/memory",
   ]
   pruneopts = "UT"
-  revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
+  revision = "2461543d988979529609e8cb6fca9ca190dc48da"
+  version = "v2.7.1"
 
 [[projects]]
-  digest = "1:f4ad803466fb70bc85d73f53aa3e7ac5809fed2282dc0bd682011433de557090"
+  digest = "1:9ca65acfc137fecbcff00a787bcaf6faf039f1dac6cea81e3de3405851452fa0"
   name = "github.com/docker/docker"
   packages = [
+    "api",
     "api/types",
     "api/types/blkiodev",
     "api/types/container",
+    "api/types/events",
     "api/types/filters",
+    "api/types/image",
     "api/types/mount",
     "api/types/network",
     "api/types/registry",
     "api/types/strslice",
     "api/types/swarm",
     "api/types/swarm/runtime",
+    "api/types/time",
     "api/types/versions",
+    "api/types/volume",
+    "client",
     "errdefs",
     "pkg/homedir",
     "pkg/idtools",
@@ -148,17 +156,18 @@
     "registry/resumable",
   ]
   pruneopts = "UT"
-  revision = "6e3113f700dea1bf2785d94731b4b5a1e602d9ab"
+  revision = "f76d6a078d881f410c00e8d900dcdfc2e026c841"
 
 [[projects]]
-  digest = "1:8866486038791fe65ea1abf660041423954b1f3fb99ea6a0ad8424422e943458"
+  digest = "1:9f3f49b4e32d3da2dd6ed07cc568627b53cc80205c0dcf69f4091f027416cb60"
   name = "github.com/docker/docker-credential-helpers"
   packages = [
     "client",
     "credentials",
   ]
   pruneopts = "UT"
-  revision = "5241b46610f2491efdf9d1c85f1ddf5b02f6d962"
+  revision = "54f0238b6bf101fc3ad3b34114cb5520beb562f5"
+  version = "v0.6.3"
 
 [[projects]]
   digest = "1:44fd27d0559326eb63ee0b7b5c80832c821761ff6d1b9cc4ad075783485a5837"
@@ -469,6 +478,10 @@
     "github.com/docker/distribution/manifest/schema2",
     "github.com/docker/distribution/reference",
     "github.com/docker/distribution/registry/client/auth",
+    "github.com/docker/docker/api/types",
+    "github.com/docker/docker/api/types/registry",
+    "github.com/docker/docker/client",
+    "github.com/docker/docker/pkg/jsonmessage",
     "github.com/docker/docker/registry",
     "github.com/docker/go/canonical/json",
     "github.com/opencontainers/go-digest",
