@@ -74,14 +74,15 @@
   revision = "004b46473808b3e7a4a3049c20e4376c91eb966d"
 
 [[projects]]
-  digest = "1:534ad88d138058854fb0029442cb101231fca8f3a368db486f9d76fecd970456"
+  digest = "1:5aff2b66b4048f665096e38d8aeeec00e370348861f31358e9e174c177e81000"
   name = "github.com/deislabs/cnab-go"
   packages = [
     "bundle",
     "bundle/definition",
   ]
   pruneopts = "UT"
-  revision = "v0.4.0-beta1"
+  revision = "a1f17dcdaaff3e06c95ed85c3a34c21c35833831"
+  version = "v0.7.1-beta1"
 
 [[projects]]
   digest = "1:982e3778851f5bb802c164c0baffa67eb7447b189211a08dd18acaa03b4d30c0"
@@ -119,7 +120,7 @@
   version = "v2.7.1"
 
 [[projects]]
-  digest = "1:b3ef7d43652849604068a8801ad67c4147a217c2413ad4c213eaeb451f81e12a"
+  digest = "1:9ca65acfc137fecbcff00a787bcaf6faf039f1dac6cea81e3de3405851452fa0"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -155,7 +156,7 @@
     "registry/resumable",
   ]
   pruneopts = "UT"
-  revision = "6e3113f700dea1bf2785d94731b4b5a1e602d9ab"
+  revision = "f76d6a078d881f410c00e8d900dcdfc2e026c841"
 
 [[projects]]
   digest = "1:9f3f49b4e32d3da2dd6ed07cc568627b53cc80205c0dcf69f4091f027416cb60"

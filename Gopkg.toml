@@ -30,23 +30,15 @@
 
 [[constraint]]
   name = "github.com/deislabs/cnab-go"
-  revision = "v0.4.0-beta1"
+  version = "v0.7.1-beta1"
 
 [[constraint]]
   name = "github.com/containerd/containerd"
   version = "v1.3.0"
 
-[[override]]
-  name = "github.com/docker/cli"
-  revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
-
 [[constraint]]
   name = "github.com/docker/distribution"
   version = "v2.7.1"
-
-[[override]]
-  name = "github.com/docker/docker"
-  revision = "6e3113f700dea1bf2785d94731b4b5a1e602d9ab"
 
 [[override]]
   name = "github.com/docker/docker-credential-helpers"
