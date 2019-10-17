@@ -157,14 +157,15 @@
   revision = "6e3113f700dea1bf2785d94731b4b5a1e602d9ab"
 
 [[projects]]
-  digest = "1:8866486038791fe65ea1abf660041423954b1f3fb99ea6a0ad8424422e943458"
+  digest = "1:9f3f49b4e32d3da2dd6ed07cc568627b53cc80205c0dcf69f4091f027416cb60"
   name = "github.com/docker/docker-credential-helpers"
   packages = [
     "client",
     "credentials",
   ]
   pruneopts = "UT"
-  revision = "5241b46610f2491efdf9d1c85f1ddf5b02f6d962"
+  revision = "54f0238b6bf101fc3ad3b34114cb5520beb562f5"
+  version = "v0.6.3"
 
 [[projects]]
   digest = "1:44fd27d0559326eb63ee0b7b5c80832c821761ff6d1b9cc4ad075783485a5837"

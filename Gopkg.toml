@@ -50,7 +50,7 @@
 
 [[override]]
   name = "github.com/docker/docker-credential-helpers"
-  revision = "5241b46610f2491efdf9d1c85f1ddf5b02f6d962"
+  version = "v0.6.3"
 
 [prune]
   go-tests = true
