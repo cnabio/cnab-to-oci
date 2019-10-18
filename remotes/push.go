@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/docker/cli/cli/config"
+	configtypes "github.com/docker/cli/cli/config/types"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
@@ -268,7 +269,7 @@ func pushTaggedImage(ctx context.Context, imageClient client.ImageAPIClient, tar
 	return jsonmessage.DisplayJSONMessagesStream(reader, out, 0, false, nil)
 }
 
-func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
+func encodeAuthToBase64(authConfig configtypes.AuthConfig) (string, error) {
 	buf, err := json.Marshal(authConfig)
 	if err != nil {
 		return "", err
@@ -276,7 +277,7 @@ func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
 	return base64.URLEncoding.EncodeToString(buf), nil
 }
 
-func resolveAuthConfig(index *registrytypes.IndexInfo) types.AuthConfig {
+func resolveAuthConfig(index *registrytypes.IndexInfo) configtypes.AuthConfig {
 	cfg := config.LoadDefaultConfigFile(os.Stderr)
 
 	hostName := index.Name
@@ -286,12 +287,12 @@ func resolveAuthConfig(index *registrytypes.IndexInfo) types.AuthConfig {
 
 	configs, err := cfg.GetAllCredentials()
 	if err != nil {
-		return types.AuthConfig{}
+		return configtypes.AuthConfig{}
 	}
 
 	authConfig, ok := configs[hostName]
 	if !ok {
-		return types.AuthConfig{}
+		return configtypes.AuthConfig{}
 	}
 	return authConfig
 }
