@@ -85,16 +85,17 @@
   version = "v0.7.1-beta1"
 
 [[projects]]
-  digest = "1:982e3778851f5bb802c164c0baffa67eb7447b189211a08dd18acaa03b4d30c0"
+  digest = "1:2170ed70165a085c25d4af4a090338ec75434088fdaf878e2bb99b779a93bdca"
   name = "github.com/docker/cli"
   packages = [
     "cli/config",
     "cli/config/configfile",
     "cli/config/credentials",
+    "cli/config/types",
     "opts",
   ]
   pruneopts = "UT"
-  revision = "f95ca8e1ba6c22c9abcdbf65e8dcc39c53958bba"
+  revision = "23446275646041f9b598d64c51be24d5d0e49376"
 
 [[projects]]
   digest = "1:f5b3251e0108c8186e46628fad8594b5b6a2ec8790068ab7c922199b6b018d2e"
@@ -473,6 +474,7 @@
     "github.com/deislabs/cnab-go/bundle/definition",
     "github.com/docker/cli/cli/config",
     "github.com/docker/cli/cli/config/configfile",
+    "github.com/docker/cli/cli/config/types",
     "github.com/docker/cli/opts",
     "github.com/docker/distribution",
     "github.com/docker/distribution/manifest/schema2",
