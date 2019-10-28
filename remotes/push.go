@@ -8,10 +8,11 @@ import (
 	"io"
 	"os"
 
+	"github.com/docker/cnab-to-oci/internal"
+
 	"github.com/docker/cli/cli/config"
 	configtypes "github.com/docker/cli/cli/config/types"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/registry"
 
@@ -247,7 +248,7 @@ func pushBundleConfigDescriptor(ctx context.Context, name string, resolver remot
 	return descriptor, nil
 }
 
-func pushTaggedImage(ctx context.Context, imageClient client.ImageAPIClient, targetRef reference.Named, out io.Writer) error {
+func pushTaggedImage(ctx context.Context, imageClient internal.ImageClient, targetRef reference.Named, out io.Writer) error {
 	repoInfo, err := registry.ParseRepositoryInfo(targetRef)
 	if err != nil {
 		return err

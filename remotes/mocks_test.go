@@ -3,11 +3,13 @@ package remotes
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/remotes"
+	"github.com/docker/docker/api/types"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -23,6 +25,9 @@ type mockResolver struct {
 func (r *mockResolver) Resolve(_ context.Context, ref string) (string, ocischemav1.Descriptor, error) {
 	descriptor := r.resolvedDescriptors[0]
 	r.resolvedDescriptors = r.resolvedDescriptors[1:]
+	if descriptor.Size == -1 {
+		return "", descriptor, fmt.Errorf("empty descriptor")
+	}
 	return ref, descriptor, nil
 }
 func (r *mockResolver) Fetcher(_ context.Context, ref string) (remotes.Fetcher, error) {
@@ -89,4 +94,29 @@ func (f *mockFetcher) Fetch(ctx context.Context, desc ocischemav1.Descriptor) (i
 	rc := ioutil.NopCloser(f.indexBuffers[0])
 	f.indexBuffers = f.indexBuffers[1:]
 	return rc, nil
+}
+
+type mockReadCloser struct {
+}
+
+func (rc mockReadCloser) Read(p []byte) (n int, err error) {
+	return 0, io.EOF
+}
+
+func (rc mockReadCloser) Close() error {
+	return nil
+}
+
+type mockImageClient struct {
+}
+
+func newMockImageClient() *mockImageClient {
+	return &mockImageClient{}
+}
+
+func (c *mockImageClient) ImagePush(ctx context.Context, ref string, options types.ImagePushOptions) (io.ReadCloser, error) {
+	return mockReadCloser{}, nil
+}
+func (c *mockImageClient) ImageTag(ctx context.Context, image, ref string) error {
+	return nil
 }

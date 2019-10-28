@@ -5,11 +5,12 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/docker/cnab-to-oci/internal"
+
 	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes"
 	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/distribution/reference"
-	"github.com/docker/docker/client"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -32,7 +33,7 @@ type fixupConfig struct {
 	componentImagePlatformFilter  platforms.Matcher
 	autoBundleUpdate              bool
 	pushImages                    bool
-	imageClient                   client.ImageAPIClient
+	imageClient                   internal.ImageClient
 	pushOut                       io.Writer
 }
 
@@ -129,7 +130,7 @@ func WithAutoBundleUpdate() FixupOption {
 // target tag.
 // But local only images (for example after a local build of components of the bundle) must be pushed.
 // This option will allow to push images that are only available in the docker daemon image store to the defined target.
-func WithPushImages(imageClient client.ImageAPIClient, out io.Writer) FixupOption {
+func WithPushImages(imageClient internal.ImageClient, out io.Writer) FixupOption {
 	return func(cfg *fixupConfig) error {
 		cfg.pushImages = true
 		if imageClient == nil {
