@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/containerd/containerd/images"
@@ -91,6 +92,94 @@ func TestFixupBundleWithAutoUpdate(t *testing.T) {
 			"my-service": {
 				BaseImage: bundle.BaseImage{
 					Image:     "my.registry/namespace/my-service",
+					ImageType: "docker",
+					MediaType: ocischemav1.MediaTypeImageManifest,
+					Size:      43,
+					Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0344",
+				},
+			},
+		},
+		Name:    "my-app",
+		Version: "0.1.0",
+	}
+	assert.DeepEqual(t, b, expectedBundle)
+}
+
+func TestFixupBundlePushImages(t *testing.T) {
+	index := ocischemav1.Manifest{}
+	bufManifest, err := json.Marshal(index)
+	assert.NilError(t, err)
+	fetcher := &mockFetcher{indexBuffers: []*bytes.Buffer{
+		// Manifest index
+		bytes.NewBuffer(bufManifest),
+	}}
+	pusher := &mockPusher{}
+	resolver := &mockResolver{
+		pusher:  pusher,
+		fetcher: fetcher,
+		resolvedDescriptors: []ocischemav1.Descriptor{
+			// Invocation image will not be resolved first, so push will occurs
+			{
+				// just a code to raise an error in the mock
+				Size: -1,
+			},
+			// Invocation image is resolved after push
+			{
+				MediaType: ocischemav1.MediaTypeImageManifest,
+				Size:      42,
+				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
+			},
+			// Image will be resolved after push based on Digest
+			{
+				MediaType: ocischemav1.MediaTypeImageManifest,
+				Size:      43,
+				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0344",
+			},
+		},
+	}
+	b := &bundle.Bundle{
+		SchemaVersion: "v1.0.0",
+		InvocationImages: []bundle.InvocationImage{
+			{
+				BaseImage: bundle.BaseImage{
+					Image:     "my.registry/namespace/my-app-invoc",
+					ImageType: "docker",
+				},
+			},
+		},
+		Images: map[string]bundle.Image{
+			"my-service": {
+				BaseImage: bundle.BaseImage{
+					Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0344",
+					Image:     "",
+					ImageType: "docker",
+				},
+			},
+		},
+		Name:    "my-app",
+		Version: "0.1.0",
+	}
+	ref, err := reference.ParseNamed("my.registry/namespace/my-app")
+	assert.NilError(t, err)
+	_, err = FixupBundle(context.TODO(), b, ref, resolver, WithAutoBundleUpdate(), WithPushImages(newMockImageClient(), os.Stdout))
+	assert.NilError(t, err)
+	expectedBundle := &bundle.Bundle{
+		SchemaVersion: "v1.0.0",
+		InvocationImages: []bundle.InvocationImage{
+			{
+				BaseImage: bundle.BaseImage{
+					Image:     "my.registry/namespace/my-app-invoc",
+					ImageType: "docker",
+					MediaType: ocischemav1.MediaTypeImageManifest,
+					Size:      42,
+					Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
+				},
+			},
+		},
+		Images: map[string]bundle.Image{
+			"my-service": {
+				BaseImage: bundle.BaseImage{
+					Image:     "",
 					ImageType: "docker",
 					MediaType: ocischemav1.MediaTypeImageManifest,
 					Size:      43,
