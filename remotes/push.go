@@ -16,11 +16,11 @@ import (
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/registry"
 
+	"github.com/cnabio/cnab-go/bundle"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/remotes"
-	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cnab-to-oci/converter"
 	"github.com/docker/cnab-to-oci/relocation"
 	"github.com/docker/distribution/reference"

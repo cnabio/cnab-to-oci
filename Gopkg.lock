@@ -45,6 +45,17 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
+  digest = "1:5aff2b66b4048f665096e38d8aeeec00e370348861f31358e9e174c177e81000"
+  name = "github.com/cnabio/cnab-go"
+  packages = [
+    "bundle",
+    "bundle/definition",
+  ]
+  pruneopts = "UT"
+  revision = "a1f17dcdaaff3e06c95ed85c3a34c21c35833831"
+  version = "v0.7.1-beta1"
+
+[[projects]]
   digest = "1:c77bcc6d6d42072339b1850b83aea8975115934ed7b3154a5d3c3b6464595bcb"
   name = "github.com/containerd/containerd"
   packages = [
@@ -72,17 +83,6 @@
   packages = ["pathdriver"]
   pruneopts = "UT"
   revision = "004b46473808b3e7a4a3049c20e4376c91eb966d"
-
-[[projects]]
-  digest = "1:5aff2b66b4048f665096e38d8aeeec00e370348861f31358e9e174c177e81000"
-  name = "github.com/deislabs/cnab-go"
-  packages = [
-    "bundle",
-    "bundle/definition",
-  ]
-  pruneopts = "UT"
-  revision = "a1f17dcdaaff3e06c95ed85c3a34c21c35833831"
-  version = "v0.7.1-beta1"
 
 [[projects]]
   digest = "1:2170ed70165a085c25d4af4a090338ec75434088fdaf878e2bb99b779a93bdca"
@@ -463,6 +463,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/cnabio/cnab-go/bundle",
+    "github.com/cnabio/cnab-go/bundle/definition",
     "github.com/containerd/containerd/content",
     "github.com/containerd/containerd/errdefs",
     "github.com/containerd/containerd/images",
@@ -470,8 +472,6 @@
     "github.com/containerd/containerd/platforms",
     "github.com/containerd/containerd/remotes",
     "github.com/containerd/containerd/remotes/docker",
-    "github.com/deislabs/cnab-go/bundle",
-    "github.com/deislabs/cnab-go/bundle/definition",
     "github.com/docker/cli/cli/config",
     "github.com/docker/cli/cli/config/configfile",
     "github.com/docker/cli/cli/config/types",

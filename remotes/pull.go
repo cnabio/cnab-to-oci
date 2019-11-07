@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/cnabio/cnab-go/bundle"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/remotes"
-	"github.com/deislabs/cnab-go/bundle"
 	"github.com/docker/cli/opts"
 	"github.com/docker/cnab-to-oci/converter"
 	"github.com/docker/cnab-to-oci/relocation"

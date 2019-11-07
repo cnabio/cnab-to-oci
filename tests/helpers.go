@@ -1,8 +1,8 @@
 package tests
 
 import (
-	"github.com/deislabs/cnab-go/bundle"
-	"github.com/deislabs/cnab-go/bundle/definition"
+	"github.com/cnabio/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle/definition"
 	"github.com/docker/cnab-to-oci/relocation"
 	"github.com/docker/distribution/manifest/schema2"
 	ocischema "github.com/opencontainers/image-spec/specs-go"
