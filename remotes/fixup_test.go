@@ -159,10 +159,13 @@ func TestFixupBundlePushImages(t *testing.T) {
 		Name:    "my-app",
 		Version: "0.1.0",
 	}
+	imageClient := newMockImageClient()
 	ref, err := reference.ParseNamed("my.registry/namespace/my-app")
 	assert.NilError(t, err)
-	_, err = FixupBundle(context.TODO(), b, ref, resolver, WithAutoBundleUpdate(), WithPushImages(newMockImageClient(), os.Stdout))
+	_, err = FixupBundle(context.TODO(), b, ref, resolver, WithAutoBundleUpdate(), WithPushImages(imageClient, os.Stdout))
 	assert.NilError(t, err)
+	// 2 images has been pushed
+	assert.Equal(t, imageClient.pushedImages, 2)
 	expectedBundle := &bundle.Bundle{
 		SchemaVersion: "v1.0.0",
 		InvocationImages: []bundle.InvocationImage{
@@ -191,6 +194,165 @@ func TestFixupBundlePushImages(t *testing.T) {
 		Version: "0.1.0",
 	}
 	assert.DeepEqual(t, b, expectedBundle)
+}
+
+func TestFixupBundleCheckResolveOrder(t *testing.T) {
+	index := ocischemav1.Manifest{}
+	bufManifest, err := json.Marshal(index)
+	assert.NilError(t, err)
+	fetcher := &mockFetcher{indexBuffers: []*bytes.Buffer{
+		// Manifest index
+		bytes.NewBuffer(bufManifest),
+	}}
+	pusher := &mockPusher{}
+
+	// Construct a test case
+	// - invocation map will be found in relocation map, resolved and copy
+	// - first service image will be found in relocation map but not resolved
+	//   then the service image in the bundle will be resolved and copy
+	// - second service image will be found in relocation map but not resolved
+	//   then the service image from the bundle will not be resolved
+	//   then the image will be found locally and pushed
+	// - third service, image is not found in relocation map
+	//   but resolved from bundle
+	// - fourth service, image is not found in relocation map, not resolvable
+	//   but pushed
+
+	b := &bundle.Bundle{
+		SchemaVersion: "v1.0.0",
+		InvocationImages: []bundle.InvocationImage{
+			{
+				BaseImage: bundle.BaseImage{
+					Image:     "resolvable-from-relocation-map",
+					ImageType: "docker",
+				},
+			},
+		},
+		Images: map[string]bundle.Image{
+			"resolved-from-bundle": {
+				BaseImage: bundle.BaseImage{
+					Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0344",
+					Image:     "not-resolved-from-relocation-map",
+					ImageType: "docker",
+				},
+			},
+			"local-push": {
+				BaseImage: bundle.BaseImage{
+					Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0344",
+					Image:     "local-image-with-relocation-entry",
+					ImageType: "docker",
+				},
+			},
+			"not-in-relocation": {
+				BaseImage: bundle.BaseImage{
+					Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0344",
+					Image:     "not-in-relocation",
+					ImageType: "docker",
+				},
+			},
+			"not-in-relocation-but-local": {
+				BaseImage: bundle.BaseImage{
+					Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0344",
+					Image:     "local-image-not-in-relocation",
+					ImageType: "docker",
+				},
+			},
+		},
+		Name:    "my-app",
+		Version: "0.1.0",
+	}
+	relocationMap := relocation.ImageRelocationMap{
+		"resolvable-from-relocation-map":    "my.registry/other-namespace/my-app-invoc@sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0344",
+		"not-resolved-from-relocation-map":  "my.registry/other-namespace/my-app-invoc@sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0344",
+		"local-image-with-relocation-entry": "my.registry/other-namespace/my-app-invoc@sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0344",
+	}
+	nbImagePushed := 2 // "local-push" and "not-in-relocation-but-local" services
+
+	resolver := &mockResolver{
+		pusher:  pusher,
+		fetcher: fetcher,
+		resolvedDescriptors: []ocischemav1.Descriptor{
+			// Invocation image first
+			// Resolvable
+			{
+				MediaType: ocischemav1.MediaTypeImageManifest,
+				Size:      42,
+				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
+			},
+			// This one is from the copy task
+			{
+				MediaType: ocischemav1.MediaTypeImageManifest,
+				Size:      42,
+				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
+			},
+
+			// First image "resolved-from-bundle"
+			// not resolvable from relocation map
+			{
+				Size: -1,
+			},
+			// resolved by second pass, from the bundle
+			{
+				MediaType: ocischemav1.MediaTypeImageManifest,
+				Size:      42,
+				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
+			},
+			// copy task
+			{
+				MediaType: ocischemav1.MediaTypeImageManifest,
+				Size:      42,
+				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
+			},
+
+			// Second image "local-push"
+			// not resolvable from relocation map
+			{
+				Size: -1,
+			},
+			// not resolvable from bundle
+			{
+				Size: -1,
+			},
+			// image is pushed, resolve is called at the end
+			{
+				MediaType: ocischemav1.MediaTypeImageManifest,
+				Size:      42,
+				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
+			},
+
+			// Third image "not-in-relocation"
+			// not in relocation map but resolvable
+			{
+				MediaType: ocischemav1.MediaTypeImageManifest,
+				Size:      42,
+				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
+			},
+			// copy task
+			{
+				MediaType: ocischemav1.MediaTypeImageManifest,
+				Size:      42,
+				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
+			},
+
+			// Fourth image "not-in-relocation-but-local"
+			// not resolvable
+			{
+				Size: -1,
+			},
+			// image is pushed, resolve is called at the end
+			{
+				MediaType: ocischemav1.MediaTypeImageManifest,
+				Size:      42,
+				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
+			},
+		},
+	}
+	imageClient := newMockImageClient()
+	ref, err := reference.ParseNamed("my.registry/namespace/my-app")
+	assert.NilError(t, err)
+	_, err = FixupBundle(context.TODO(), b, ref, resolver, WithAutoBundleUpdate(), WithPushImages(imageClient, os.Stdout), WithRelocationMap(relocationMap))
+	assert.NilError(t, err)
+	assert.Equal(t, imageClient.pushedImages, nbImagePushed)
 }
 
 func TestFixupBundleFailsWithDifferentDigests(t *testing.T) {
