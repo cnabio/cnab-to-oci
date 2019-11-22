@@ -108,6 +108,7 @@ func (rc mockReadCloser) Close() error {
 }
 
 type mockImageClient struct {
+	pushedImages int
 }
 
 func newMockImageClient() *mockImageClient {
@@ -115,6 +116,7 @@ func newMockImageClient() *mockImageClient {
 }
 
 func (c *mockImageClient) ImagePush(ctx context.Context, ref string, options types.ImagePushOptions) (io.ReadCloser, error) {
+	c.pushedImages++
 	return mockReadCloser{}, nil
 }
 func (c *mockImageClient) ImageTag(ctx context.Context, image, ref string) error {
