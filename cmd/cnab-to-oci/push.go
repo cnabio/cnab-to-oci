@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/deislabs/cnab-go/bundle"
+	"github.com/cnabio/cnab-go/bundle"
 	"github.com/docker/cnab-to-oci/remotes"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/client"
