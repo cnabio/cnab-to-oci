@@ -52,8 +52,8 @@
     "bundle/definition",
   ]
   pruneopts = "UT"
-  revision = "8b2ff3a6f40c837ae274552bc76b1e6499dc8beb"
-  version = "v0.8.0-beta1"
+  revision = "03423407b46b8c61ba8c82588c6cd9a61fc213ed"
+  version = "v0.8.2-beta1"
 
 [[projects]]
   digest = "1:c77bcc6d6d42072339b1850b83aea8975115934ed7b3154a5d3c3b6464595bcb"
