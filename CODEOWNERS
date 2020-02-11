@@ -1,0 +1,7 @@
+# This file is described here:  https://help.github.com/en/articles/about-code-owners
+
+# Global Owners: These members are Core Maintainers of cnab-to-oci
+CODEOWNERS      @silvin-lubecki @radu-matei
+LICENSE         @silvin-lubecki @radu-matei
+CONTRIBUTING.md @silvin-lubecki @radu-matei
+GOVERNANCE.md   @silvin-lubecki @radu-matei
