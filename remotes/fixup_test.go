@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/cnabio/cnab-go/bundle"
+	"github.com/cnabio/cnab-to-oci/relocation"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/platforms"
-	"github.com/docker/cnab-to-oci/relocation"
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"

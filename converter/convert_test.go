@@ -3,7 +3,7 @@ package converter
 import (
 	"testing"
 
-	"github.com/docker/cnab-to-oci/tests"
+	"github.com/cnabio/cnab-to-oci/tests"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"

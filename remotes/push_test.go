@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/cnabio/cnab-go/bundle"
-	"github.com/docker/cnab-to-oci/converter"
-	"github.com/docker/cnab-to-oci/tests"
+	"github.com/cnabio/cnab-to-oci/converter"
+	"github.com/cnabio/cnab-to-oci/tests"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/go/canonical/json"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
