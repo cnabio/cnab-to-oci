@@ -20,3 +20,39 @@ jobs:
           version: 18.09.3
       # specify any bash command here prefixed with `run: `
       - run: make all-ci
+  release:
+    docker:
+      # specify the version
+      - image: circleci/golang:1.13.0
+    environment:
+      GOPROXY: direct
+    working_directory: /go/src/github.com/docker/cnab-to-oci
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 18.09.3
+      - run: >
+          go get -u github.com/tcnksm/ghr
+          last_tag=$(git describe --tags ${CIRCLE_TAG}^ --abbrev=0 --always)
+          ghr \
+            -u cnabio \
+            -r cnab-to-oci \
+            -n "cnab-to-oci ${CIRCLE_TAG}" \
+            -b "$(git log --no-merges --pretty=format:'- %s %H (%aN)' HEAD ^${last_tag})" \
+            ${CIRCLE_TAG}
+
+workflows:
+  version: 2
+  untagged-build:
+    jobs:
+      - build
+  tagged-build:
+    jobs:
+      - release:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
