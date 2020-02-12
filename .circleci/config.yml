@@ -21,6 +21,13 @@ jobs:
       # specify any bash command here prefixed with `run: `
       - run: make all-ci
   release:
+    requires:
+      - build
+    filters:
+      tags:
+        only: /^v.*/
+      branches:
+        ignore: /.*/
     docker:
       - image: circleci/golang:1.13.0
     environment:
@@ -37,19 +44,3 @@ jobs:
             -n "cnab-to-oci ${CIRCLE_TAG}" \
             -b "$(git log --no-merges --pretty=format:'- %s %H (%aN)' HEAD ^${last_tag})" \
             ${CIRCLE_TAG}
-
-workflows:
-  version: 2
-  untagged-build:
-    jobs:
-      - build
-  tagged-build:
-    jobs:
-      - release:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
