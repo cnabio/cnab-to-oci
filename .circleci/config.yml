@@ -6,7 +6,7 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.13.0
+      - image: circleci/golang:1.13.7
     environment:
       GOPROXY: direct
     #### TEMPLATE_NOTE: go expects specific checkout path representing url
@@ -32,7 +32,7 @@ jobs:
       - image: circleci/golang:1.13.0
     environment:
       GOPROXY: direct
-    working_directory: /go/src/github.com/docker/cnab-to-oci
+    working_directory: /go/src/github.com/cnabio/cnab-to-oci
     steps:
       - checkout
       - run: >
