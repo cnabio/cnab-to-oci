@@ -22,15 +22,12 @@ jobs:
       - run: make all-ci
   release:
     docker:
-      # specify the version
       - image: circleci/golang:1.13.0
     environment:
       GOPROXY: direct
     working_directory: /go/src/github.com/docker/cnab-to-oci
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 18.09.3
       - run: >
           go get -u github.com/tcnksm/ghr
           last_tag=$(git describe --tags ${CIRCLE_TAG}^ --abbrev=0 --always)
