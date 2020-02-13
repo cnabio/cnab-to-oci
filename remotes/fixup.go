@@ -7,11 +7,11 @@ import (
 	"io/ioutil"
 
 	"github.com/cnabio/cnab-go/bundle"
+	"github.com/cnabio/cnab-to-oci/relocation"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes"
-	"github.com/docker/cnab-to-oci/relocation"
 	"github.com/docker/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )

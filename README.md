@@ -1,4 +1,4 @@
-[![Documentation](https://godoc.org/github.com/docker/cnab-to-oci/remotes?status.svg)](http://godoc.org/github.com/docker/cnab-to-oci/remotes)
+[![Documentation](https://godoc.org/github.com/cnabio/cnab-to-oci/remotes?status.svg)](http://godoc.org/github.com/cnabio/cnab-to-oci/remotes)
 
 # CNAB to OCI
 
@@ -420,7 +420,7 @@ project.
 ## Contributors
 
 See also the list of
-[contributors](https://github.com/docker/cnab-to-oci/graphs/contributors) who
+[contributors](https://github.com/cnabio/cnab-to-oci/graphs/contributors) who
 participated in this project.
 
 ## License
