@@ -44,3 +44,15 @@ jobs:
             -n "cnab-to-oci ${CIRCLE_TAG}" \
             -b "$(git log --no-merges --pretty=format:'- %s %H (%aN)' HEAD ^${last_tag})" \
             ${CIRCLE_TAG}
+
+# workflows are required when using the CircleCI GitHub App
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
+  release:
+    jobs:
+      - build
+      - release
+
