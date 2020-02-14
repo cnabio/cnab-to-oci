@@ -21,13 +21,6 @@ jobs:
       # specify any bash command here prefixed with `run: `
       - run: make all-ci
   release:
-    requires:
-      - build
-    filters:
-      tags:
-        only: /^v.*/
-      branches:
-        ignore: /.*/
     docker:
       - image: circleci/golang:1.13.7
     environment:
@@ -35,24 +28,30 @@ jobs:
     working_directory: /go/src/github.com/cnabio/cnab-to-oci
     steps:
       - checkout
-      - run: >
-          go get -u github.com/tcnksm/ghr
-          last_tag=$(git describe --tags ${CIRCLE_TAG}^ --abbrev=0 --always)
-          ghr \
-            -u cnabio \
-            -r cnab-to-oci \
-            -n "cnab-to-oci ${CIRCLE_TAG}" \
-            -b "$(git log --no-merges --pretty=format:'- %s %H (%aN)' HEAD ^${last_tag})" \
-            ${CIRCLE_TAG}
+      - run:
+          name: "Publish release on GitHub"
+          command: |
+            go get -u github.com/tcnksm/ghr
+            last_tag=$(git describe --tags ${CIRCLE_TAG}^ --abbrev=0 --always)
+            ghr \
+              -u cnabio \
+              -r cnab-to-oci \
+              -n "cnab-to-oci ${CIRCLE_TAG}" \
+              -b "$(git log --no-merges --pretty=format:'- %s %H (%aN)' HEAD ^${last_tag})" \
+              ${CIRCLE_TAG}
 
 # workflows are required when using the CircleCI GitHub App
 workflows:
   version: 2
-  build:
+  main:
     jobs:
       - build
-  release:
-    jobs:
-      - build
-      - release
+      - release:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
 
