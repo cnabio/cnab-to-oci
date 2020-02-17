@@ -1,22 +1,48 @@
-# Golang CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
 jobs:
   build:
     docker:
-      # specify the version
-      - image: circleci/golang:1.13.0
+      - image: circleci/golang:1.13.7
     environment:
       GOPROXY: direct
-    #### TEMPLATE_NOTE: go expects specific checkout path representing url
-    #### expecting it in the form of
-    ####   /go/src/github.com/circleci/go-tool
-    ####   /go/src/bitbucket.org/circleci/go-tool
     working_directory: /go/src/github.com/cnabio/cnab-to-oci
     steps:
       - checkout
       - setup_remote_docker:
           version: 18.09.3
-      # specify any bash command here prefixed with `run: `
       - run: make all-ci
+  release:
+    docker:
+      - image: circleci/golang:1.13.7
+    environment:
+      GOPROXY: direct
+    working_directory: /go/src/github.com/cnabio/cnab-to-oci
+    steps:
+      - checkout
+      - run:
+          name: "Publish release on GitHub"
+          command: |
+            go get -u github.com/tcnksm/ghr
+            last_tag=$(git describe --tags ${CIRCLE_TAG}^ --abbrev=0 --always)
+            ghr \
+              -u cnabio \
+              -r cnab-to-oci \
+              -n "cnab-to-oci ${CIRCLE_TAG}" \
+              -b "$(git log --no-merges --pretty=format:'- %s %H (%aN)' HEAD ^${last_tag})" \
+              ${CIRCLE_TAG}
+
+# Workflows are required when using the CircleCI Checks App
+workflows:
+  version: 2
+  main:
+    jobs:
+      - build
+      - release:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+
