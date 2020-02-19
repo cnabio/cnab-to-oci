@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "v1.0.0",
+  "name": "helloworld",
+  "version": "0.1.1",
+  "description": "A short description of your bundle",
+  "keywords": [
+    "helloworld",
+    "cnab",
+    "tutorial"
+  ],
+  "maintainers": [
+    {
+      "name": "Jane Doe",
+      "email": "jane.doe@example.com",
+      "url": "https://example.com"
+    }
+  ],
+  "invocationImages": [
+    {
+      "imageType": "docker",
+      "image": "cnab/helloworld:0.1.1",
+      "size": 942,
+      "contentDigest": "sha256:a59a4e74d9cc89e4e75dfb2cc7ea5c108e4236ba6231b53081a9e2506d1197b6",
+      "mediaType": "application/vnd.docker.distribution.manifest.v2+json"
+    }
+  ],
+  "images": null,
+  "parameters": null,
+  "credentials": null
+}
