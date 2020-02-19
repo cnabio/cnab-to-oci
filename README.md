@@ -1,4 +1,4 @@
-[![Documentation](https://godoc.org/github.com/cnabio/cnab-to-oci/remotes?status.svg)](http://godoc.org/github.com/cnabio/cnab-to-oci/remotes)
+[![CircleCI](https://circleci.com/gh/cnabio/cnab-to-oci/tree/master.svg?style=svg)](https://circleci.com/gh/cnabio/cnab-to-oci/tree/master) [![Documentation](https://godoc.org/github.com/cnabio/cnab-to-oci/remotes?status.svg)](http://godoc.org/github.com/cnabio/cnab-to-oci/remotes)
 
 # CNAB to OCI
 
