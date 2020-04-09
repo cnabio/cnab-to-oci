@@ -138,7 +138,7 @@ func GenerateRelocationMap(ix *ocischemav1.Index, b *bundle.Bundle, originRepo r
 
 func makeAnnotations(b *bundle.Bundle) (map[string]string, error) {
 	result := map[string]string{
-		CNABRuntimeVersionAnnotation:      b.SchemaVersion,
+		CNABRuntimeVersionAnnotation:      string(b.SchemaVersion),
 		ocischemav1.AnnotationTitle:       b.Name,
 		ocischemav1.AnnotationVersion:     b.Version,
 		ocischemav1.AnnotationDescription: b.Description,

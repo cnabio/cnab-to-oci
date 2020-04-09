@@ -8,7 +8,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.14
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5
 	github.com/beorn7/perks v1.0.1
-	github.com/cnabio/cnab-go v0.8.2-beta1
+	github.com/cnabio/cnab-go v0.10.0-beta1
 	github.com/containerd/containerd v1.3.0
 	github.com/containerd/continuity v0.0.0-20181203112020-004b46473808
 	github.com/docker/cli v0.0.0-20191017083524-a8ff7f821017
