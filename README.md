@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/cnabio/cnab-to-oci/tree/master.svg?style=svg)](https://circleci.com/gh/cnabio/cnab-to-oci/tree/master) [![Documentation](https://godoc.org/github.com/cnabio/cnab-to-oci/remotes?status.svg)](http://godoc.org/github.com/cnabio/cnab-to-oci/remotes)
+[![CircleCI](https://circleci.com/gh/cnabio/cnab-to-oci/tree/main.svg?style=svg)](https://circleci.com/gh/cnabio/cnab-to-oci/tree/main) [![Documentation](https://godoc.org/github.com/cnabio/cnab-to-oci/remotes?status.svg)](http://godoc.org/github.com/cnabio/cnab-to-oci/remotes)
 
 # CNAB to OCI
 
@@ -10,7 +10,7 @@ CNAB using an OCI or Docker registry.
 ## Rationale for this approach
 
 Goals:
-- Package the information from a CNAB [`bundle.json`](https://github.com/deislabs/cnab-spec/blob/master/101-bundle-json.md) into a format that can be stored in container registries.
+- Package the information from a CNAB [`bundle.json`](https://github.com/deislabs/cnab-spec/blob/main/101-bundle-json.md) into a format that can be stored in container registries.
 - Require no or only minor changes to the [OCI specification](https://github.com/opencontainers/image-spec).
     - Major changes would take long to get approved.
     - Anything that diverges from the current specification will require coordination with registries to ensure compatibility.
@@ -27,9 +27,9 @@ Non-goals:
 ### Selection of OCI index
 
 The CNAB specification references a
-[list of invocation images](https://github.com/deislabs/cnab-spec/blob/master/101-bundle-json.md#invocation-images)
+[list of invocation images](https://github.com/deislabs/cnab-spec/blob/main/101-bundle-json.md#invocation-images)
 and a
-[map of other images](https://github.com/deislabs/cnab-spec/blob/master/101-bundle-json.md#the-image-map).
+[map of other images](https://github.com/deislabs/cnab-spec/blob/main/101-bundle-json.md#the-image-map).
 An [OCI index](#what-is-an-oci-index) is already used for handling multiple
 images so this was seen as a natural fit.
 

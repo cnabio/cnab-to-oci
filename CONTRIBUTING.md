@@ -47,10 +47,10 @@ When you are asked to cut a new release, here is the process:
    - Bump the build segment (version-prerelease.BUILDTAG+releasename) if you only
      fixed something in the build, but the final binaries are the same.
 
-1. Ensure that the master CI build is passing, then make the tag and push it.
+1. Ensure that the CI build is passing, then make the tag and push it.
 
    ```
-   git checkout master
+   git checkout main
    git pull
    git tag VERSION -a -m ""
    git push --tags
