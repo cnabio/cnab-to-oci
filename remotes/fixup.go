@@ -47,7 +47,7 @@ func FixupBundle(ctx context.Context, b *bundle.Bundle, ref reference.Named, res
 		return nil, fmt.Errorf("only one invocation image supported for bundle %q", ref)
 	}
 
-	relocationMap := relocation.ImageRelocationMap{}
+	relocationMap := cfg.relocationMap
 	if err := fixupImage(ctx, "InvocationImage", &b.InvocationImages[0].BaseImage, relocationMap, cfg, events, cfg.invocationImagePlatformFilter); err != nil {
 		return nil, err
 	}
@@ -72,13 +72,18 @@ func fixupImage(
 	events chan<- FixupEvent,
 	platformFilter platforms.Matcher) error {
 
+	// Fixup the base image, using the relocated base image if available
+	sourceImage := *baseImage
+	if relocatedBaseImage, ok := relocationMap[baseImage.Image]; ok {
+		sourceImage.Image = relocatedBaseImage
+	}
+
 	log.G(ctx).Debugf("Updating entry in relocation map for %q", baseImage.Image)
 	ctx = withMutedContext(ctx)
-	notifyEvent, progress := makeEventNotifier(events, baseImage.Image, cfg.targetRef)
+	notifyEvent, progress := makeEventNotifier(events, sourceImage.Image, cfg.targetRef)
 
 	notifyEvent(FixupEventTypeCopyImageStart, "", nil)
-	// Fixup Base image
-	fixupInfo, pushed, err := fixupBaseImage(ctx, name, baseImage, cfg)
+	fixupInfo, pushed, err := fixupBaseImage(ctx, name, &sourceImage, cfg)
 	if err != nil {
 		return notifyError(notifyEvent, err)
 	}

@@ -109,10 +109,11 @@ func (rc mockReadCloser) Close() error {
 
 type mockImageClient struct {
 	pushedImages int
+	taggedImages map[string]string
 }
 
 func newMockImageClient() *mockImageClient {
-	return &mockImageClient{}
+	return &mockImageClient{taggedImages: map[string]string{}}
 }
 
 func (c *mockImageClient) ImagePush(ctx context.Context, ref string, options types.ImagePushOptions) (io.ReadCloser, error) {
@@ -120,5 +121,6 @@ func (c *mockImageClient) ImagePush(ctx context.Context, ref string, options typ
 	return mockReadCloser{}, nil
 }
 func (c *mockImageClient) ImageTag(ctx context.Context, image, ref string) error {
+	c.taggedImages[image] = ref
 	return nil
 }
