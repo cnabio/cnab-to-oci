@@ -16,7 +16,7 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestFixupBundleWithAutoUpdate(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"gotest.tools/icmd"
+	"gotest.tools/v3/icmd"
 )
 
 func startRegistry(t *testing.T) *Container {

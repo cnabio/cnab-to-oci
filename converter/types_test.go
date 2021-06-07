@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/cnabio/cnab-go/bundle"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestPrepareForPush(t *testing.T) {

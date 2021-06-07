@@ -13,7 +13,7 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/docker/go/canonical/json"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 const (
