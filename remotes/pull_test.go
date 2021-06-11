@@ -11,7 +11,7 @@ import (
 	"github.com/cnabio/cnab-to-oci/tests"
 	"github.com/docker/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestPull(t *testing.T) {
