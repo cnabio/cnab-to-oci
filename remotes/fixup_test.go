@@ -17,6 +17,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"gotest.tools/v3/assert"
+	"gotest.tools/v3/assert/cmp"
 )
 
 func TestFixupBundleWithAutoUpdate(t *testing.T) {
@@ -162,6 +163,7 @@ func TestFixupBundlePushImages(t *testing.T) {
 	imageClient := newMockImageClient()
 	ref, err := reference.ParseNamed("my.registry/namespace/my-app")
 	assert.NilError(t, err)
+
 	_, err = FixupBundle(context.TODO(), b, ref, resolver, WithAutoBundleUpdate(), WithPushImages(imageClient, os.Stdout))
 	assert.NilError(t, err)
 	// 2 images has been pushed
@@ -196,12 +198,88 @@ func TestFixupBundlePushImages(t *testing.T) {
 	assert.DeepEqual(t, b, expectedBundle)
 }
 
-func TestFixupBundleCheckResolveOrder(t *testing.T) {
+func TestFixupRelocatedBundle(t *testing.T) {
 	index := ocischemav1.Manifest{}
 	bufManifest, err := json.Marshal(index)
 	assert.NilError(t, err)
 	fetcher := &mockFetcher{indexBuffers: []*bytes.Buffer{
 		// Manifest index
+		bytes.NewBuffer(bufManifest),
+	}}
+	pusher := &mockPusher{}
+	resolver := &mockResolver{
+		pusher:  pusher,
+		fetcher: fetcher,
+		resolvedDescriptors: []ocischemav1.Descriptor{
+			// Invocation image will not be resolved first, so push will occurs
+			{
+				// just a code to raise an error in the mock
+				Size: -1,
+			},
+			// Invocation image is resolved after push
+			{
+				MediaType: ocischemav1.MediaTypeImageManifest,
+				Size:      65,
+				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
+			},
+			{ // Trigger a push for the referenced image
+				Size: -1,
+			},
+			// Referenced image will be resolved after push based on Digest
+			{
+				MediaType: ocischemav1.MediaTypeImageManifest,
+				Size:      65,
+				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0344",
+			},
+		},
+	}
+	b := &bundle.Bundle{
+		SchemaVersion: "v1.0.0",
+		InvocationImages: []bundle.InvocationImage{
+			{
+				BaseImage: bundle.BaseImage{
+					Image:     "my.registry/namespace/my-app-invoc",
+					ImageType: "docker",
+				},
+			},
+		},
+		Images: map[string]bundle.Image{
+			"my-service": {
+				BaseImage: bundle.BaseImage{
+					Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0344",
+					Image:     "my.registry/namespace/my-service",
+					ImageType: "docker",
+				},
+			},
+		},
+		Name:    "my-app",
+		Version: "0.1.0",
+	}
+	imageClient := newMockImageClient()
+	ref, err := reference.ParseNamed("my.registry/namespace/my-app")
+	assert.NilError(t, err)
+
+	rm := relocation.ImageRelocationMap{
+		"my.registry/namespace/my-app-invoc": "localhost:5000/my-app-invoc",
+		"my.registry/namespace/my-service":   "localhost:5000/my-service",
+	}
+	_, err = FixupBundle(context.TODO(), b, ref, resolver, WithRelocationMap(rm), WithAutoBundleUpdate(), WithPushImages(imageClient, os.Stdout))
+	assert.NilError(t, err)
+
+	// Check that the relocated image was pushed and not the original
+	assert.Equal(t, 2, len(imageClient.taggedImages), "expected 2 images pushed")
+	assert.Assert(t, cmp.Contains(imageClient.taggedImages, "localhost:5000/my-app-invoc"), "expected the relocated invocation image to be pushed, not the original")
+	assert.Assert(t, cmp.Contains(imageClient.taggedImages, "localhost:5000/my-service"), "expected the relocated referenced image to be pushed, not the original")
+}
+
+func TestFixupBundleCheckResolveOrder(t *testing.T) {
+	index := ocischemav1.Manifest{}
+	bufManifest, err := json.Marshal(index)
+	assert.NilError(t, err)
+	fetcher := &mockFetcher{indexBuffers: []*bytes.Buffer{
+		// Manifest index for each relocated image
+		bytes.NewBuffer(bufManifest),
+		bytes.NewBuffer(bufManifest),
 		bytes.NewBuffer(bufManifest),
 	}}
 	pusher := &mockPusher{}
@@ -276,13 +354,13 @@ func TestFixupBundleCheckResolveOrder(t *testing.T) {
 			// Resolvable
 			{
 				MediaType: ocischemav1.MediaTypeImageManifest,
-				Size:      42,
+				Size:      65,
 				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
 			},
 			// This one is from the copy task
 			{
 				MediaType: ocischemav1.MediaTypeImageManifest,
-				Size:      42,
+				Size:      65,
 				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
 			},
 
@@ -294,13 +372,13 @@ func TestFixupBundleCheckResolveOrder(t *testing.T) {
 			// resolved by second pass, from the bundle
 			{
 				MediaType: ocischemav1.MediaTypeImageManifest,
-				Size:      42,
+				Size:      65,
 				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
 			},
 			// copy task
 			{
 				MediaType: ocischemav1.MediaTypeImageManifest,
-				Size:      42,
+				Size:      65,
 				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
 			},
 
@@ -316,7 +394,7 @@ func TestFixupBundleCheckResolveOrder(t *testing.T) {
 			// image is pushed, resolve is called at the end
 			{
 				MediaType: ocischemav1.MediaTypeImageManifest,
-				Size:      42,
+				Size:      65,
 				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
 			},
 
@@ -324,13 +402,13 @@ func TestFixupBundleCheckResolveOrder(t *testing.T) {
 			// not in relocation map but resolvable
 			{
 				MediaType: ocischemav1.MediaTypeImageManifest,
-				Size:      42,
+				Size:      65,
 				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
 			},
 			// copy task
 			{
 				MediaType: ocischemav1.MediaTypeImageManifest,
-				Size:      42,
+				Size:      65,
 				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
 			},
 
@@ -342,7 +420,7 @@ func TestFixupBundleCheckResolveOrder(t *testing.T) {
 			// image is pushed, resolve is called at the end
 			{
 				MediaType: ocischemav1.MediaTypeImageManifest,
-				Size:      42,
+				Size:      65,
 				Digest:    "sha256:beef1aa7866258751a261bae525a1842c7ff0662d4f34a355d5f36826abc0343",
 			},
 		},
