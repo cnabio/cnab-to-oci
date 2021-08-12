@@ -5,9 +5,12 @@ import (
 	"github.com/cnabio/cnab-go/bundle/definition"
 	"github.com/cnabio/cnab-to-oci/relocation"
 	"github.com/docker/distribution/manifest/schema2"
+	"github.com/opencontainers/go-digest"
 	ocischema "github.com/opencontainers/image-spec/specs-go"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
+
+const BundleDigest digest.Digest = "sha256:4cfae04045c6f0fd14330ab86dea9694fb19ce9602ba2da0af8c826fc0053631"
 
 // MakeTestBundle creates a simple bundle for tests
 func MakeTestBundle() *bundle.Bundle {

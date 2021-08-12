@@ -93,8 +93,9 @@ func TestPush(t *testing.T) {
 	assert.NilError(t, err)
 
 	// push the bundle
-	_, err = Push(context.Background(), b, tests.MakeRelocationMap(), ref, resolver, true)
+	descriptor, err := Push(context.Background(), b, tests.MakeRelocationMap(), ref, resolver, true)
 	assert.NilError(t, err)
+	assert.Equal(t, tests.BundleDigest, descriptor.Digest)
 	assert.Equal(t, len(resolver.pushedReferences), 3)
 	assert.Equal(t, len(pusher.pushedDescriptors), 3)
 	assert.Equal(t, len(pusher.buffers), 3)

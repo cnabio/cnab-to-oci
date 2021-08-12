@@ -46,7 +46,10 @@ func TestPull(t *testing.T) {
 		fetcher: fetcher,
 		resolvedDescriptors: []ocischemav1.Descriptor{
 			// Bundle index descriptor
-			{MediaType: ocischemav1.MediaTypeImageIndex},
+			{
+				MediaType: ocischemav1.MediaTypeImageIndex,
+				Digest:    tests.BundleDigest,
+			},
 			// Bundle config manifest descriptor
 			{
 				MediaType: ocischemav1.MediaTypeDescriptor,
@@ -60,10 +63,15 @@ func TestPull(t *testing.T) {
 	assert.NilError(t, err)
 
 	// Pull the CNAB and get the bundle
-	b, _, err = Pull(context.Background(), ref, resolver)
+	b, rm, digest, err := Pull(context.Background(), ref, resolver)
 	assert.NilError(t, err)
 	expectedBundle := tests.MakeTestBundle()
 	assert.DeepEqual(t, expectedBundle, b)
+
+	expectedRelocationMap := tests.MakeRelocationMap()
+	assert.DeepEqual(t, expectedRelocationMap, rm)
+
+	assert.Equal(t, tests.BundleDigest, digest, "incorrect digest pulled")
 }
 
 // nolint: lll
@@ -76,7 +84,7 @@ func ExamplePull() {
 	}
 
 	// Pull the CNAB, get the bundle and the associated relocation map
-	resultBundle, relocationMap, err := Pull(context.Background(), ref, resolver)
+	resultBundle, relocationMap, _, err := Pull(context.Background(), ref, resolver)
 	if err != nil {
 		panic(err)
 	}
