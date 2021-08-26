@@ -16,56 +16,59 @@ import (
 	"github.com/docker/cli/opts"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/distribution/registry/client/auth"
+	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
 
 // Pull pulls a bundle from an OCI Image Index manifest
-func Pull(ctx context.Context, ref reference.Named, resolver remotes.Resolver) (*bundle.Bundle, relocation.ImageRelocationMap, error) {
+func Pull(ctx context.Context, ref reference.Named, resolver remotes.Resolver) (*bundle.Bundle, relocation.ImageRelocationMap, digest.Digest, error) {
 	log.G(ctx).Debugf("Pulling CNAB Bundle %s", ref)
-	index, err := getIndex(ctx, ref, resolver)
+	index, descriptor, err := getIndex(ctx, ref, resolver)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, "", err
 	}
 	b, err := getBundle(ctx, ref, resolver, index)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, "", err
 	}
 	relocationMap, err := converter.GenerateRelocationMap(&index, b, ref)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, "", err
 	}
-	return b, relocationMap, nil
+
+	log.G(ctx).Debugf("Digest: %s", descriptor.Digest)
+	return b, relocationMap, descriptor.Digest, nil
 }
 
-func getIndex(ctx context.Context, ref auth.Scope, resolver remotes.Resolver) (ocischemav1.Index, error) {
+func getIndex(ctx context.Context, ref auth.Scope, resolver remotes.Resolver) (ocischemav1.Index, ocischemav1.Descriptor, error) {
 	logger := log.G(ctx)
 
 	logger.Debug("Getting OCI Index Descriptor")
 	resolvedRef, indexDescriptor, err := resolver.Resolve(withMutedContext(ctx), ref.String())
 	if err != nil {
 		if errors.Cause(err) == errdefs.ErrNotFound {
-			return ocischemav1.Index{}, err
+			return ocischemav1.Index{}, ocischemav1.Descriptor{}, err
 		}
-		return ocischemav1.Index{}, fmt.Errorf("failed to resolve bundle manifest %q: %s", ref, err)
+		return ocischemav1.Index{}, ocischemav1.Descriptor{}, fmt.Errorf("failed to resolve bundle manifest %q: %s", ref, err)
 	}
 	if indexDescriptor.MediaType != ocischemav1.MediaTypeImageIndex && indexDescriptor.MediaType != images.MediaTypeDockerSchema2ManifestList {
-		return ocischemav1.Index{}, fmt.Errorf("invalid media type %q for bundle manifest", indexDescriptor.MediaType)
+		return ocischemav1.Index{}, ocischemav1.Descriptor{}, fmt.Errorf("invalid media type %q for bundle manifest", indexDescriptor.MediaType)
 	}
 	logPayload(logger, indexDescriptor)
 
 	logger.Debugf("Fetching OCI Index %s", indexDescriptor.Digest)
 	indexPayload, err := pullPayload(ctx, resolver, resolvedRef, indexDescriptor)
 	if err != nil {
-		return ocischemav1.Index{}, fmt.Errorf("failed to pull bundle manifest %q: %s", ref, err)
+		return ocischemav1.Index{}, ocischemav1.Descriptor{}, fmt.Errorf("failed to pull bundle manifest %q: %s", ref, err)
 	}
 	var index ocischemav1.Index
 	if err := json.Unmarshal(indexPayload, &index); err != nil {
-		return ocischemav1.Index{}, fmt.Errorf("failed to pull bundle manifest %q: %s", ref, err)
+		return ocischemav1.Index{}, ocischemav1.Descriptor{}, fmt.Errorf("failed to pull bundle manifest %q: %s", ref, err)
 	}
 	logPayload(logger, index)
 
-	return index, nil
+	return index, indexDescriptor, nil
 }
 
 func getBundle(ctx context.Context, ref opts.NamedOption, resolver remotes.Resolver, index ocischemav1.Index) (*bundle.Bundle, error) {

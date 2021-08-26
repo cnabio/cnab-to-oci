@@ -43,7 +43,7 @@ func runPull(opts pullOptions) error {
 		return err
 	}
 
-	b, relocationMap, err := remotes.Pull(context.Background(), ref, createResolver(opts.insecureRegistries))
+	b, relocationMap, _, err := remotes.Pull(context.Background(), ref, createResolver(opts.insecureRegistries))
 	if err != nil {
 		return err
 	}
