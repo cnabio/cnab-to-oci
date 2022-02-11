@@ -6,7 +6,7 @@ require (
 	github.com/cnabio/cnab-go v0.10.0-beta1
 	github.com/containerd/containerd v1.3.0
 	github.com/docker/cli v0.0.0-20191017083524-a8ff7f821017
-	github.com/docker/distribution v2.7.1+incompatible
+	github.com/docker/distribution v2.8.0+incompatible
 	github.com/docker/docker v1.4.2-0.20181229214054-f76d6a078d88
 	github.com/docker/go v1.5.1-1
 	github.com/google/go-cmp v0.5.4 // indirect
