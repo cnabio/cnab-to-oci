@@ -47,8 +47,8 @@ check_go_env:
 		(echo "Invalid Go environment - The local directory structure must match:  $(PKG_NAME)" && false)
 
 get-tools:
-	go get golang.org/x/tools/cmd/goimports
-	go get github.com/golangci/golangci-lint/cmd/golangci-lint
+	go install golang.org/x/tools/cmd/goimports@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 # Default build
 build: bin/cnab-to-oci
