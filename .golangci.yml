@@ -7,14 +7,13 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - golint
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     - lll
     - misspell
     - nakedret
+    - revive
     - staticcheck
     - structcheck
     - typecheck
