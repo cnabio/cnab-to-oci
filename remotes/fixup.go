@@ -13,6 +13,7 @@ import (
 	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes"
 	"github.com/docker/distribution/reference"
+	"github.com/hashicorp/go-multierror"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -216,18 +217,20 @@ func fixupBaseImage(ctx context.Context, name string, baseImage *bundle.BaseImag
 		pushLocalImage,
 	}
 
+	var bigErr *multierror.Error
 	for _, f := range fixups {
 		info, pushed, ok, err := f(ctx, targetRepoOnly, baseImage, cfg)
 		if err != nil {
 			log.G(ctx).Debug(err)
-			return imageFixupInfo{}, false, fmt.Errorf("failed to fixup the image %s for service %q: %v", baseImage.Image, name, err)
+			// do not stop trying fixups after the first error. Only report the errors if all fixups were unable to push the image.
+			bigErr = multierror.Append(bigErr, fmt.Errorf("failed to fixup the image %s for service %q: %v", baseImage.Image, name, err))
 		}
 		if ok {
 			return info, pushed, nil
 		}
 	}
 
-	return imageFixupInfo{}, false, fmt.Errorf("failed to resolve or push image %s for service %q", baseImage.Image, name)
+	return imageFixupInfo{}, false, bigErr.ErrorOrNil()
 }
 
 func pushByDigest(ctx context.Context, target reference.Named, baseImage *bundle.BaseImage, cfg fixupConfig) (imageFixupInfo, bool, bool, error) {
