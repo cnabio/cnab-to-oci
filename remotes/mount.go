@@ -2,6 +2,7 @@ package remotes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -12,7 +13,6 @@ import (
 	"github.com/containerd/containerd/remotes"
 	"github.com/docker/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -62,7 +62,7 @@ func (h *descriptorCopier) Handle(ctx context.Context, desc *descriptorProgress)
 		h.eventNotifier.reportProgress(retErr)
 	}()
 	writer, err := pushWithAnnotation(ctx, h.targetPusher, h.originalSource, desc.Descriptor)
-	if errors.Cause(err) == errdefs.ErrAlreadyExists {
+	if errors.Is(err, errdefs.ErrAlreadyExists) {
 		desc.markDone()
 		if strings.Contains(err.Error(), "mounted") {
 			desc.setAction("Mounted")
@@ -79,7 +79,7 @@ func (h *descriptorCopier) Handle(ctx context.Context, desc *descriptorProgress)
 	}
 	defer reader.Close()
 	err = content.Copy(ctx, writer, reader, desc.Size, desc.Digest)
-	if errors.Cause(err) == errdefs.ErrAlreadyExists {
+	if errors.Is(err, errdefs.ErrAlreadyExists) {
 		err = nil
 	}
 	if err == nil {
@@ -204,7 +204,7 @@ func (w *manifestWalker) walk(ctx context.Context, desc ocischemav1.Descriptor, 
 		w.progress.addRoot(descProgress)
 	}
 	copyOrMountWorkItem, err := w.contentHandler.createCopyTask(ctx, descProgress)
-	if errors.Cause(err) == errdefs.ErrAlreadyExists {
+	if errors.Is(err, errdefs.ErrAlreadyExists) {
 		w.eventNotifier.reportProgress(nil)
 		return newPromise(w.scheduler, doneDependency{})
 	}
