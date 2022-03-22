@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -26,7 +27,6 @@ import (
 	"github.com/docker/docker/registry"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 )
 
 // ManifestOption is a callback used to customize a manifest before pushing it
@@ -202,20 +202,20 @@ func pushPayload(ctx context.Context, resolver remotes.Resolver, reference strin
 	}
 	writer, err := pusher.Push(ctx, descriptor)
 	if err != nil {
-		if errors.Cause(err) == errdefs.ErrAlreadyExists {
+		if errors.Is(err, errdefs.ErrAlreadyExists) {
 			return nil
 		}
 		return err
 	}
 	defer writer.Close()
 	if _, err := writer.Write(payload); err != nil {
-		if errors.Cause(err) == errdefs.ErrAlreadyExists {
+		if errors.Is(err, errdefs.ErrAlreadyExists) {
 			return nil
 		}
 		return err
 	}
 	err = writer.Commit(ctx, descriptor.Size, descriptor.Digest)
-	if errors.Cause(err) == errdefs.ErrAlreadyExists {
+	if errors.Is(err, errdefs.ErrAlreadyExists) {
 		return nil
 	}
 	return err
