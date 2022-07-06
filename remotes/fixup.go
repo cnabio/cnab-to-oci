@@ -13,6 +13,7 @@ import (
 	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes"
 	"github.com/docker/distribution/reference"
+	"github.com/hashicorp/go-multierror"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -216,17 +217,20 @@ func fixupBaseImage(ctx context.Context, name string, baseImage *bundle.BaseImag
 		pushLocalImage,
 	}
 
+	var bigErr *multierror.Error
 	for _, f := range fixups {
 		info, pushed, ok, err := f(ctx, targetRepoOnly, baseImage, cfg)
 		if err != nil {
 			log.G(ctx).Debug(err)
+			// do not stop trying fixups after the first error. Only report the errors if all fixups were unable to push the image.
+			bigErr = multierror.Append(bigErr, fmt.Errorf("failed to fixup the image %s for service %q: %v", baseImage.Image, name, err))
 		}
 		if ok {
 			return info, pushed, nil
 		}
 	}
 
-	return imageFixupInfo{}, false, fmt.Errorf("failed to resolve or push image for service %q", name)
+	return imageFixupInfo{}, false, bigErr.ErrorOrNil()
 }
 
 func pushByDigest(ctx context.Context, target reference.Named, baseImage *bundle.BaseImage, cfg fixupConfig) (imageFixupInfo, bool, bool, error) {
@@ -234,30 +238,36 @@ func pushByDigest(ctx context.Context, target reference.Named, baseImage *bundle
 		return imageFixupInfo{}, false, false, nil
 	}
 	descriptor, err := pushImageToTarget(ctx, baseImage.Digest, cfg)
+	if err != nil {
+		return imageFixupInfo{}, false, false, fmt.Errorf("failed to push digested image %s@%s to target %s: %v", baseImage.Image, baseImage.Digest, target, err)
+	}
 	return imageFixupInfo{
 		targetRepo:         target,
 		sourceRef:          nil,
 		resolvedDescriptor: descriptor,
-	}, true, err == nil, err
+	}, true, true, nil
 }
 
 func resolveImage(ctx context.Context, target reference.Named, baseImage *bundle.BaseImage, cfg fixupConfig) (imageFixupInfo, bool, bool, error) {
 	sourceImageRef, err := ref(baseImage.Image)
 	if err != nil {
-		return imageFixupInfo{}, false, false, err
+		return imageFixupInfo{}, false, false, fmt.Errorf("failed to resolve image: invalid source ref %s: %v", baseImage.Image, err)
 	}
 	_, descriptor, err := cfg.resolver.Resolve(ctx, sourceImageRef.String())
+	if err != nil {
+		return imageFixupInfo{}, false, false, fmt.Errorf("failed to resolve image %s: %v", sourceImageRef.String(), err)
+	}
 	return imageFixupInfo{
 		targetRepo:         target,
 		sourceRef:          sourceImageRef,
 		resolvedDescriptor: descriptor,
-	}, false, err == nil, err
+	}, false, true, nil
 }
 
 func resolveImageInRelocationMap(ctx context.Context, target reference.Named, baseImage *bundle.BaseImage, cfg fixupConfig) (imageFixupInfo, bool, bool, error) {
 	sourceImageRef, err := ref(baseImage.Image)
 	if err != nil {
-		return imageFixupInfo{}, false, false, err
+		return imageFixupInfo{}, false, false, fmt.Errorf("failed to resolve image in relocation map: invalid source ref %s: %v", baseImage.Image, err)
 	}
 	relocatedRef, ok := cfg.relocationMap[baseImage.Image]
 	if !ok {
@@ -265,14 +275,17 @@ func resolveImageInRelocationMap(ctx context.Context, target reference.Named, ba
 	}
 	relocatedImageRef, err := ref(relocatedRef)
 	if err != nil {
-		return imageFixupInfo{}, false, false, err
+		return imageFixupInfo{}, false, false, fmt.Errorf("failed to resolve image in relocation map: invalid target ref %s: %v", relocatedRef, err)
 	}
 	_, descriptor, err := cfg.resolver.Resolve(ctx, relocatedImageRef.String())
+	if err != nil {
+		return imageFixupInfo{}, false, false, err
+	}
 	return imageFixupInfo{
 		targetRepo:         target,
 		sourceRef:          sourceImageRef,
 		resolvedDescriptor: descriptor,
-	}, false, err == nil, err
+	}, false, true, nil
 }
 
 func pushLocalImage(ctx context.Context, target reference.Named, baseImage *bundle.BaseImage, cfg fixupConfig) (imageFixupInfo, bool, bool, error) {
@@ -281,14 +294,17 @@ func pushLocalImage(ctx context.Context, target reference.Named, baseImage *bund
 	}
 	sourceImageRef, err := ref(baseImage.Image)
 	if err != nil {
-		return imageFixupInfo{}, false, false, err
+		return imageFixupInfo{}, false, false, fmt.Errorf("failed to push local image: invalid source ref %s: %v", baseImage.Image, err)
 	}
 	descriptor, err := pushImageToTarget(ctx, baseImage.Image, cfg)
+	if err != nil {
+		return imageFixupInfo{}, false, false, fmt.Errorf("failed to push local image %s: %v", baseImage.Image, err)
+	}
 	return imageFixupInfo{
 		targetRepo:         target,
 		sourceRef:          sourceImageRef,
 		resolvedDescriptor: descriptor,
-	}, true, err == nil, err
+	}, true, true, nil
 }
 
 func ref(str string) (reference.Named, error) {
