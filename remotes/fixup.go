@@ -251,11 +251,11 @@ func pushByDigest(ctx context.Context, target reference.Named, baseImage *bundle
 func resolveImage(ctx context.Context, target reference.Named, baseImage *bundle.BaseImage, cfg fixupConfig) (imageFixupInfo, bool, bool, error) {
 	sourceImageRef, err := ref(baseImage.Image)
 	if err != nil {
-		return imageFixupInfo{}, false, false, fmt.Errorf("failed to resolve image: invalid source ref %s: %v", baseImage.Image, err)
+		return imageFixupInfo{}, false, false, fmt.Errorf("failed to resolve image: invalid source ref %s: %w", baseImage.Image, err)
 	}
 	_, descriptor, err := cfg.resolver.Resolve(ctx, sourceImageRef.String())
 	if err != nil {
-		return imageFixupInfo{}, false, false, fmt.Errorf("failed to resolve image %s: %v", sourceImageRef.String(), err)
+		return imageFixupInfo{}, false, false, fmt.Errorf("failed to resolve image %s: %w", sourceImageRef.String(), err)
 	}
 	return imageFixupInfo{
 		targetRepo:         target,
