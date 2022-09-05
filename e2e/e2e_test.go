@@ -26,6 +26,7 @@ func TestPushAndPullCNAB(t *testing.T) {
 
 	invocationImageName := registry + "/e2e/hello-world:0.1.0-invoc"
 	serviceImageName := registry + "/e2e/http-echo"
+	whalesayImageName := registry + "/e2e/whalesay"
 	appImageName := registry + "/myuser"
 
 	// Build invocation image
@@ -34,13 +35,16 @@ func TestPushAndPullCNAB(t *testing.T) {
 	cmd.Env = append(os.Environ(), "DOCKER_BUILDKIT=1")
 	runCmd(t, cmd)
 
-	// Fetch service image
+	// Fetch service images
 	runCmd(t, icmd.Command("docker", "pull", "hashicorp/http-echo"))
+	// We are using whalesay because it has duplicate layers in the image
+	runCmd(t, icmd.Command("docker", "pull", "docker/whalesay"))
 	runCmd(t, icmd.Command("docker", "tag", "hashicorp/http-echo", serviceImageName))
+	runCmd(t, icmd.Command("docker", "tag", "docker/whalesay", whalesayImageName))
 
 	// Tidy up my room
 	defer func() {
-		runCmd(t, icmd.Command("docker", "image", "rm", "-f", invocationImageName, "hashicorp/http-echo", serviceImageName))
+		runCmd(t, icmd.Command("docker", "image", "rm", "-f", invocationImageName, "hashicorp/http-echo", serviceImageName, "docker/whalesay", whalesayImageName))
 	}()
 
 	// Push the images to the registry
@@ -48,9 +52,10 @@ func TestPushAndPullCNAB(t *testing.T) {
 	invocDigest := getDigest(t, output)
 
 	runCmd(t, icmd.Command("docker", "push", serviceImageName))
+	runCmd(t, icmd.Command("docker", "push", whalesayImageName))
 
 	// Templatize the bundle
-	applyTemplate(t, serviceImageName, invocationImageName, invocDigest, filepath.Join("testdata", "hello-world", "bundle.json.template"), dir.Join("bundle.json"))
+	applyTemplate(t, serviceImageName, whalesayImageName, invocationImageName, invocDigest, filepath.Join("testdata", "hello-world", "bundle.json.template"), dir.Join("bundle.json"))
 
 	// Save the fixed bundle
 	runCmd(t, icmd.Command("cnab-to-oci", "fixup", dir.Join("bundle.json"),
@@ -61,7 +66,7 @@ func TestPushAndPullCNAB(t *testing.T) {
 		"--auto-update-bundle"))
 
 	// Check the fixed bundle
-	applyTemplate(t, serviceImageName, invocationImageName, invocDigest, filepath.Join("testdata", "bundle.json.golden.template"), filepath.Join("testdata", "bundle.json.golden"))
+	applyTemplate(t, serviceImageName, whalesayImageName, invocationImageName, invocDigest, filepath.Join("testdata", "bundle.json.golden.template"), filepath.Join("testdata", "bundle.json.golden"))
 	buf, err := ioutil.ReadFile(dir.Join("fixed-bundle.json"))
 	assert.NilError(t, err)
 	golden.Assert(t, string(buf), "bundle.json.golden")
@@ -107,17 +112,19 @@ func runCmd(t *testing.T, cmd icmd.Cmd) string {
 	return result.Stdout()
 }
 
-func applyTemplate(t *testing.T, serviceImageName, invocationImageName, invocationDigest, templateFile, resultFile string) {
+func applyTemplate(t *testing.T, serviceImageName, whalesayImageName, invocationImageName, invocationDigest, templateFile, resultFile string) {
 	tmpl, err := template.ParseFiles(templateFile)
 	assert.NilError(t, err)
 	data := struct {
 		InvocationImage  string
 		InvocationDigest string
 		ServiceImage     string
+		WhalesayImage    string
 	}{
 		invocationImageName,
 		invocationDigest,
 		serviceImageName,
+		whalesayImageName,
 	}
 	f, err := os.Create(resultFile)
 	assert.NilError(t, err)
