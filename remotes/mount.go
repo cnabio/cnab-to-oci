@@ -12,6 +12,7 @@ import (
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes"
 	"github.com/docker/distribution/reference"
+	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -148,9 +149,28 @@ func (r *remoteReaderAt) ReadAt(p []byte, off int64) (int, error) {
 type descriptorContentHandler struct {
 	descriptorCopier *descriptorCopier
 	targetRepo       string
+
+	// Keep track of which layers we have copied for this image
+	// so that we can avoid copying the same layer more than once.
+	layersScheduled map[digest.Digest]struct{}
 }
 
 func (h *descriptorContentHandler) createCopyTask(ctx context.Context, descProgress *descriptorProgress) (func(ctx context.Context) error, error) {
+	if _, scheduled := h.layersScheduled[descProgress.Digest]; scheduled {
+		return func(ctx context.Context) error {
+			// Skip. We have already scheduled a copy of this layer
+			return nil
+		}, nil
+	}
+
+	// Mark that we have scheduled this layer. Some images can have a layer duplicated
+	// within the image and attempts to copy the same layer multiple times results in
+	// unexpected size errors when the later copy tasks try to copy an existing layer.
+	if h.layersScheduled == nil {
+		h.layersScheduled = make(map[digest.Digest]struct{}, 1)
+	}
+	h.layersScheduled[descProgress.Digest] = struct{}{}
+
 	copyOrMountWorkItem := func(ctx context.Context) error {
 		return h.descriptorCopier.Handle(ctx, descProgress)
 	}
