@@ -1,11 +1,12 @@
 package converter
 
 import (
+	"encoding/json"
+
 	"github.com/cnabio/cnab-go/bundle"
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/schema2"
-	"github.com/docker/go/canonical/json"
-	digest "github.com/opencontainers/go-digest"
+	"github.com/opencontainers/go-digest"
 	ocischema "github.com/opencontainers/image-spec/specs-go"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -26,7 +27,7 @@ type PreparedBundleConfig struct {
 
 // PrepareForPush serializes a bundle config, generates its image manifest, and its manifest descriptor
 func PrepareForPush(b *bundle.Bundle) (*PreparedBundleConfig, error) {
-	blob, err := json.MarshalCanonical(b)
+	blob, err := b.Marshal()
 	if err != nil {
 		return nil, err
 	}
