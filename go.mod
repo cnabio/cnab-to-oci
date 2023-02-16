@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/cnabio/cnab-go v0.23.4
-	github.com/containerd/containerd v1.6.12
+	github.com/containerd/containerd v1.6.18
 	github.com/docker/cli v20.10.17+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/docker/docker v20.10.17+incompatible
