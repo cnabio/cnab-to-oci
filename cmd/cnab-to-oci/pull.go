@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/cnabio/cnab-to-oci/remotes"
+	"github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer"
 	"github.com/docker/distribution/reference"
-	"github.com/docker/go/canonical/json"
 	"github.com/spf13/cobra"
 )
 
@@ -53,7 +54,11 @@ func runPull(opts pullOptions) error {
 }
 
 func writeOutput(file string, data interface{}) error {
-	bytes, err := json.MarshalCanonical(data)
+	plainJSON, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	bytes, err := jsoncanonicalizer.Transform(plainJSON)
 	if err != nil {
 		return err
 	}

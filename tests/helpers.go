@@ -10,7 +10,7 @@ import (
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-const BundleDigest digest.Digest = "sha256:4cfae04045c6f0fd14330ab86dea9694fb19ce9602ba2da0af8c826fc0053631"
+const BundleDigest digest.Digest = "sha256:00043ca96c3c9470fc0f647c67613ddf500941556d1ecc14d75bc9b2834f66c3"
 
 // MakeTestBundle creates a simple bundle for tests
 func MakeTestBundle() *bundle.Bundle {
@@ -79,6 +79,12 @@ func MakeTestBundle() *bundle.Bundle {
 			"output1Type": {
 				Type: "string",
 			},
+			// Include a number as a regression test for marshaling with the proper canonical json library
+			// We should always be marshaling with a library that supports numeric types
+			"numberType": {
+				Type:    "number",
+				Default: 0.5,
+			},
 		},
 		Parameters: map[string]bundle.Parameter{
 			"param1": {
@@ -86,6 +92,12 @@ func MakeTestBundle() *bundle.Bundle {
 				Destination: &bundle.Location{
 					EnvironmentVariable: "env_var",
 					Path:                "/some/path",
+				},
+			},
+			"param2": {
+				Definition: "numberType",
+				Destination: &bundle.Location{
+					EnvironmentVariable: "PARM2",
 				},
 			},
 		},

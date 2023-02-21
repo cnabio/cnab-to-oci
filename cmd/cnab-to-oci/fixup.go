@@ -10,7 +10,6 @@ import (
 	containerdRemotes "github.com/containerd/containerd/remotes"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/distribution/reference"
-	"github.com/docker/go/canonical/json"
 	"github.com/spf13/cobra"
 )
 
@@ -44,14 +43,16 @@ func fixupCmd() *cobra.Command {
 }
 
 func runFixup(opts fixupOptions) error {
-	var b bundle.Bundle
 	bundleJSON, err := os.ReadFile(opts.input)
 	if err != nil {
 		return err
 	}
-	if err := json.Unmarshal(bundleJSON, &b); err != nil {
+
+	b, err := bundle.Unmarshal(bundleJSON)
+	if err != nil {
 		return err
 	}
+
 	ref, err := reference.ParseNormalizedNamed(opts.targetRef)
 	if err != nil {
 		return err
@@ -63,7 +64,7 @@ func runFixup(opts fixupOptions) error {
 	if opts.autoUpdateBundle {
 		fixupOptions = append(fixupOptions, remotes.WithAutoBundleUpdate())
 	}
-	relocationMap, err := remotes.FixupBundle(context.Background(), &b, ref, createResolver(opts.insecureRegistries), fixupOptions...)
+	relocationMap, err := remotes.FixupBundle(context.Background(), b, ref, createResolver(opts.insecureRegistries), fixupOptions...)
 	if err != nil {
 		return err
 	}

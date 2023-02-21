@@ -2,6 +2,7 @@ package remotes
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"github.com/cnabio/cnab-to-oci/converter"
 	"github.com/cnabio/cnab-to-oci/tests"
 	"github.com/docker/distribution/reference"
-	"github.com/docker/go/canonical/json"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"gotest.tools/v3/assert"
 )
@@ -22,7 +22,7 @@ const (
   "manifests": [
     {
       "mediaType":"application/vnd.oci.image.manifest.v1+json",
-      "digest":"sha256:91ada58e30bc0aea920e69a9356085534ce31c50700e650c96b432fc3a5d1661",
+      "digest":"sha256:122a5dc186ec285488de9d25e99c96a11d3f7ff71c6e05a06c98e8627472a920",
       "size":189,
       "annotations":{
         "io.cnab.manifest.type":"config"
@@ -70,14 +70,14 @@ const (
    "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
    "config": {
       "mediaType": "application/vnd.docker.container.image.v1+json",
-      "size": 1484,
-      "digest": "sha256:e978bf2a3c57b25fc3bb7f1adccb6fa0f0284d38163d5faffce7bf5fca3f39b3"
+      "size": 1596,
+      "digest": "sha256:dbe3480b9cb300f389e8d02e4a682f9107772468feb6845f912dc8deed6d76fd"
    },
    "layers": [
       {
          "mediaType": "application/vnd.docker.container.image.v1+json",
-         "size": 1484,
-         "digest": "sha256:e978bf2a3c57b25fc3bb7f1adccb6fa0f0284d38163d5faffce7bf5fca3f39b3"
+         "size": 1596,
+         "digest": "sha256:dbe3480b9cb300f389e8d02e4a682f9107772468feb6845f912dc8deed6d76fd"
       }
    ]
 }`
@@ -87,14 +87,14 @@ func TestPush(t *testing.T) {
 	pusher := &mockPusher{}
 	resolver := &mockResolver{pusher: pusher}
 	b := tests.MakeTestBundle()
-	expectedBundleConfig, err := json.MarshalCanonical(b)
-	assert.NilError(t, err)
+	expectedBundleConfig, err := b.Marshal()
+	assert.NilError(t, err, "marshaling to canonical json failed")
 	ref, err := reference.ParseNamed("my.registry/namespace/my-app:my-tag")
-	assert.NilError(t, err)
+	assert.NilError(t, err, "parsing the OCI reference failed")
 
 	// push the bundle
 	descriptor, err := Push(context.Background(), b, tests.MakeRelocationMap(), ref, resolver, true)
-	assert.NilError(t, err)
+	assert.NilError(t, err, "push failed")
 	assert.Equal(t, tests.BundleDigest, descriptor.Digest)
 	assert.Equal(t, len(resolver.pushedReferences), 3)
 	assert.Equal(t, len(pusher.pushedDescriptors), 3)
@@ -167,7 +167,7 @@ func ExamplePush() {
 	// Output:
 	// {
 	//   "mediaType": "application/vnd.oci.image.index.v1+json",
-	//   "digest": "sha256:4cfae04045c6f0fd14330ab86dea9694fb19ce9602ba2da0af8c826fc0053631",
+	//   "digest": "sha256:00043ca96c3c9470fc0f647c67613ddf500941556d1ecc14d75bc9b2834f66c3",
 	//   "size": 1360
 	// }
 }
