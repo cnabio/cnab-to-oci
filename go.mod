@@ -1,6 +1,6 @@
 module github.com/cnabio/cnab-to-oci
 
-go 1.17
+go 1.19
 
 require (
 	github.com/cnabio/cnab-go v0.23.4
