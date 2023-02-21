@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/cnabio/cnab-to-oci/remotes"
@@ -62,5 +61,5 @@ func writeOutput(file string, data interface{}) error {
 		fmt.Fprintln(os.Stdout, string(bytes))
 		return nil
 	}
-	return ioutil.WriteFile(file, bytes, 0644)
+	return os.WriteFile(file, bytes, 0644)
 }

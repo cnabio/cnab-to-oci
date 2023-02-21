@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	"github.com/cnabio/cnab-go/bundle"
 	"github.com/cnabio/cnab-to-oci/relocation"
@@ -169,7 +169,7 @@ func fixupPlatforms(ctx context.Context,
 	}
 	defer reader.Close()
 
-	manifestBytes, err := ioutil.ReadAll(reader)
+	manifestBytes, err := io.ReadAll(reader)
 	if err != nil {
 		return err
 	}
@@ -323,9 +323,9 @@ func ref(str string) (reference.Named, error) {
 // remains accessible using its digest. So right after pushing it, the image is resolved to grab its digest from the
 // registry and can be added to the index.
 // The final workflow is then:
-//  - tag the image to push with targeted reference
-//  - push the image using a docker `ImageAPIClient`
-//  - resolve the pushed image to grab its digest
+//   - tag the image to push with targeted reference
+//   - push the image using a docker `ImageAPIClient`
+//   - resolve the pushed image to grab its digest
 func pushImageToTarget(ctx context.Context, src string, cfg fixupConfig) (ocischemav1.Descriptor, error) {
 	taggedRef := reference.TagNameOnly(cfg.targetRef)
 

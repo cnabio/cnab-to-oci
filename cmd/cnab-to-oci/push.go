@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/cnabio/cnab-go/bundle"
@@ -54,7 +53,7 @@ func pushCmd() *cobra.Command {
 
 func runPush(opts pushOptions) error {
 	var b bundle.Bundle
-	bundleJSON, err := ioutil.ReadFile(opts.input)
+	bundleJSON, err := os.ReadFile(opts.input)
 	if err != nil {
 		return err
 	}

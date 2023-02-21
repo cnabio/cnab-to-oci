@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -688,7 +687,7 @@ func TestFixupPlatforms(t *testing.T) {
 			resolvedReader, err := sourceFetcher.Fetch(context.Background(), fixupInfo.resolvedDescriptor)
 			assert.NilError(t, err)
 			defer resolvedReader.Close()
-			resolvedBytes, err := ioutil.ReadAll(resolvedReader)
+			resolvedBytes, err := io.ReadAll(resolvedReader)
 			assert.NilError(t, err)
 			var resolvedManifest testManifest
 			assert.NilError(t, json.Unmarshal(resolvedBytes, &resolvedManifest))
@@ -725,5 +724,5 @@ type bytesFetcher []byte
 
 func (f bytesFetcher) Fetch(_ context.Context, _ ocischemav1.Descriptor) (io.ReadCloser, error) {
 	reader := bytes.NewReader(f)
-	return ioutil.NopCloser(reader), nil
+	return io.NopCloser(reader), nil
 }

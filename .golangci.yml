@@ -2,7 +2,6 @@ linters:
   enable-all: false
   disable-all: true
   enable:
-    - deadcode
     - errcheck
     - gocyclo
     - gofmt
@@ -15,12 +14,10 @@ linters:
     - nakedret
     - revive
     - staticcheck
-    - structcheck
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
 linters-settings:
   gocyclo:
     min-complexity: 16
