@@ -3,18 +3,18 @@ module github.com/cnabio/cnab-to-oci
 go 1.19
 
 require (
-	github.com/cnabio/cnab-go v0.23.4
+	github.com/cnabio/cnab-go v0.25.1
 	github.com/containerd/containerd v1.6.18
-	github.com/docker/cli v20.10.17+incompatible
+	github.com/docker/cli v23.0.1+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
-	github.com/docker/docker v20.10.17+incompatible
+	github.com/docker/docker v23.0.1+incompatible
 	github.com/docker/go v1.5.1-1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/sync v0.1.0
 	gotest.tools/v3 v3.0.3
 )
 
