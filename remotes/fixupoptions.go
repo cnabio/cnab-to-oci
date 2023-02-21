@@ -3,7 +3,6 @@ package remotes
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	"github.com/cnabio/cnab-go/bundle"
 	"github.com/cnabio/cnab-to-oci/internal"
@@ -140,7 +139,7 @@ func WithPushImages(imageClient internal.ImageClient, out io.Writer) FixupOption
 		}
 		cfg.imageClient = imageClient
 		if out == nil {
-			cfg.pushOut = ioutil.Discard
+			cfg.pushOut = io.Discard
 		} else {
 			cfg.pushOut = out
 		}

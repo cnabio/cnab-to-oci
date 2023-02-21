@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	"github.com/cnabio/cnab-go/bundle"
 	"github.com/containerd/containerd/images"
@@ -40,7 +39,7 @@ func (s *sourceFetcherWithLocalData) Add(data []byte) digest.Digest {
 
 func (s *sourceFetcherWithLocalData) Fetch(ctx context.Context, desc ocischemav1.Descriptor) (io.ReadCloser, error) {
 	if v, ok := s.localData[desc.Digest]; ok {
-		return ioutil.NopCloser(bytes.NewReader(v)), nil
+		return io.NopCloser(bytes.NewReader(v)), nil
 	}
 	return s.inner.Fetch(ctx, desc)
 }

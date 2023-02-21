@@ -48,7 +48,7 @@ check_go_env:
 
 get-tools:
 	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.44.0
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2
 
 # Default build
 build: bin/cnab-to-oci

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/cnabio/cnab-go/bundle"
@@ -46,7 +45,7 @@ func fixupCmd() *cobra.Command {
 
 func runFixup(opts fixupOptions) error {
 	var b bundle.Bundle
-	bundleJSON, err := ioutil.ReadFile(opts.input)
+	bundleJSON, err := os.ReadFile(opts.input)
 	if err != nil {
 		return err
 	}

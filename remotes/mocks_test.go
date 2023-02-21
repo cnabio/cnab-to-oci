@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/remotes"
@@ -91,7 +90,7 @@ type mockFetcher struct {
 }
 
 func (f *mockFetcher) Fetch(ctx context.Context, desc ocischemav1.Descriptor) (io.ReadCloser, error) {
-	rc := ioutil.NopCloser(f.indexBuffers[0])
+	rc := io.NopCloser(f.indexBuffers[0])
 	f.indexBuffers = f.indexBuffers[1:]
 	return rc, nil
 }

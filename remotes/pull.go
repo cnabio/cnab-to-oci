@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	"github.com/cnabio/cnab-go/bundle"
 	"github.com/cnabio/cnab-to-oci/converter"
@@ -164,6 +164,6 @@ func pullPayload(ctx context.Context, resolver remotes.Resolver, reference strin
 	}
 	defer reader.Close()
 
-	result, err := ioutil.ReadAll(reader)
+	result, err := io.ReadAll(reader)
 	return result, err
 }

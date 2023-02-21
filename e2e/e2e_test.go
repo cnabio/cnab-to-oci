@@ -3,7 +3,6 @@ package e2e
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -67,7 +66,7 @@ func TestPushAndPullCNAB(t *testing.T) {
 
 	// Check the fixed bundle
 	applyTemplate(t, serviceImageName, whalesayImageName, invocationImageName, invocDigest, filepath.Join("testdata", "bundle.json.golden.template"), filepath.Join("testdata", "bundle.json.golden"))
-	buf, err := ioutil.ReadFile(dir.Join("fixed-bundle.json"))
+	buf, err := os.ReadFile(dir.Join("fixed-bundle.json"))
 	assert.NilError(t, err)
 	golden.Assert(t, string(buf), "bundle.json.golden")
 
@@ -94,9 +93,9 @@ func TestPushAndPullCNAB(t *testing.T) {
 		"--bundle", dir.Join("pulled-bundle.json"),
 		"--relocation-map", dir.Join("pulled-relocation.json"),
 		"--insecure-registries", registry))
-	pulledBundle, err := ioutil.ReadFile(dir.Join("pulled-bundle.json"))
+	pulledBundle, err := os.ReadFile(dir.Join("pulled-bundle.json"))
 	assert.NilError(t, err)
-	pulledRelocation, err := ioutil.ReadFile(dir.Join("pulled-relocation.json"))
+	pulledRelocation, err := os.ReadFile(dir.Join("pulled-relocation.json"))
 	assert.NilError(t, err)
 
 	// Check the fixed bundle.json is equal to the pulled bundle.json
@@ -134,7 +133,7 @@ func applyTemplate(t *testing.T, serviceImageName, whalesayImageName, invocation
 }
 
 func checkRelocationMap(t *testing.T, serviceImageName, invocationImageName, appImageName, relocationMapFile string) {
-	data, err := ioutil.ReadFile(relocationMapFile)
+	data, err := os.ReadFile(relocationMapFile)
 	assert.NilError(t, err)
 	relocationMap := map[string]string{}
 	err = json.Unmarshal(data, &relocationMap)
