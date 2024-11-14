@@ -8,7 +8,7 @@ import (
 
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/remotes"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -115,7 +115,7 @@ func newMockImageClient() *mockImageClient {
 	return &mockImageClient{taggedImages: map[string]string{}}
 }
 
-func (c *mockImageClient) ImagePush(ctx context.Context, ref string, options types.ImagePushOptions) (io.ReadCloser, error) {
+func (c *mockImageClient) ImagePush(ctx context.Context, ref string, options image.PushOptions) (io.ReadCloser, error) {
 	c.pushedImages++
 	return mockReadCloser{}, nil
 }
