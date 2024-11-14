@@ -384,7 +384,7 @@ func TestFixupBundleCheckResolveOrder(t *testing.T) {
 			// Second image "local-push"
 			// not resolvable from relocation map
 			{
-				Size: -1,
+				Size: 0,
 			},
 			// not resolvable from bundle
 			{
@@ -414,7 +414,7 @@ func TestFixupBundleCheckResolveOrder(t *testing.T) {
 			// Fourth image "not-in-relocation-but-local"
 			// not resolvable
 			{
-				Size: -1,
+				Size: 0,
 			},
 			// image is pushed, resolve is called at the end
 			{
