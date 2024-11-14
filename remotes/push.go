@@ -21,7 +21,7 @@ import (
 	"github.com/docker/cli/cli/config/credentials"
 	configtypes "github.com/docker/cli/cli/config/types"
 	"github.com/docker/distribution/reference"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	registrytypes "github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/registry"
@@ -259,7 +259,7 @@ func pushTaggedImage(ctx context.Context, imageClient internal.ImageClient, targ
 		return err
 	}
 
-	reader, err := imageClient.ImagePush(ctx, targetRef.String(), types.ImagePushOptions{
+	reader, err := imageClient.ImagePush(ctx, targetRef.String(), image.PushOptions{
 		RegistryAuth: encodedAuth,
 	})
 	if err != nil {
