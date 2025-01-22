@@ -1,8 +1,8 @@
-ARG ALPINE_VERSION=3.17
-ARG GO_VERSION=1.19.6
+ARG ALPINE_VERSION=3.21
+ARG GO_VERSION=1.23.4
 
 # build image
-FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} as build
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS build
 
 ARG DOCKERCLI_VERSION=20.10.23
 ARG DOCKERCLI_CHANNEL=stable
@@ -30,7 +30,7 @@ RUN make BUILDTIME=$BUILDTIME COMMIT=$COMMIT TAG=$TAG bin/cnab-to-oci &&\
   make BUILDTIME=$BUILDTIME COMMIT=$COMMIT TAG=$TAG build-e2e-test
 
 # e2e image
-FROM alpine:${ALPINE_VERSION} as e2e
+FROM alpine:${ALPINE_VERSION} AS e2e
 
 # copy all the elements needed for e2e tests from build image
 COPY --from=build /go/docker/docker /usr/bin/docker

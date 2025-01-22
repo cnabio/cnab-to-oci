@@ -10,7 +10,7 @@ import (
 	"github.com/cnabio/cnab-go/bundle"
 	"github.com/cnabio/cnab-to-oci/relocation"
 	"github.com/containerd/containerd/images"
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 	ocischema "github.com/opencontainers/image-spec/specs-go"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )

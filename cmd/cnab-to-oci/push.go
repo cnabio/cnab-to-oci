@@ -9,7 +9,7 @@ import (
 
 	"github.com/cnabio/cnab-go/bundle"
 	"github.com/cnabio/cnab-to-oci/remotes"
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 	"github.com/docker/docker/client"
 	"github.com/spf13/cobra"
 )
@@ -31,7 +31,7 @@ func pushCmd() *cobra.Command {
 		Use:   "push <bundle file> [options]",
 		Short: "Fixes and pushes the bundle to an registry",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			opts.input = args[0]
 			if opts.targetRef == "" {
 				return errors.New("--target flag must be set with a namespace ")

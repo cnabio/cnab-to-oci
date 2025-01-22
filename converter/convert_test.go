@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/cnabio/cnab-to-oci/tests"
-	"github.com/docker/distribution/manifest/schema2"
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/distribution/manifest/schema2"
+	"github.com/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"gotest.tools/v3/assert"
 )
@@ -80,7 +80,7 @@ func TestConvertFromFixedUpBundleToOCI(t *testing.T) {
 	badRelocationMap["my.registry/namespace/my-app-invoc"] = "Some/iNvalid/Ref"
 	_, err = ConvertBundleToOCIIndex(src, named, bundleConfigDescriptor, badRelocationMap)
 	assert.ErrorContains(t, err, "invalid invocation image: "+
-		"image \"Some/iNvalid/Ref\" is not a valid image reference: invalid reference format: repository name must be lowercase")
+		"image \"Some/iNvalid/Ref\" is not a valid image reference: invalid reference format: repository name (iNvalid/Ref) must be lowercase")
 
 	// Invalid size
 	src = tests.MakeTestBundle()

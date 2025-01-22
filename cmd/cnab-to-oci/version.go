@@ -11,7 +11,7 @@ func versionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Shows the version of cnab-to-oci",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			fmt.Println(internal.FullVersion())
 			return nil
 		},

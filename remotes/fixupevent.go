@@ -3,7 +3,7 @@ package remotes
 import (
 	"sync"
 
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
