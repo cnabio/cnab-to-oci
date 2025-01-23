@@ -36,14 +36,13 @@ func TestPushAndPullCNAB(t *testing.T) {
 
 	// Fetch service images
 	runCmd(t, icmd.Command("docker", "pull", "hashicorp/http-echo"))
-	// We are using whalesay because it has duplicate layers in the image
-	runCmd(t, icmd.Command("docker", "pull", "docker/whalesay"))
+	runCmd(t, icmd.Command("docker", "pull", "docker/compose"))
 	runCmd(t, icmd.Command("docker", "tag", "hashicorp/http-echo", serviceImageName))
-	runCmd(t, icmd.Command("docker", "tag", "docker/whalesay", whalesayImageName))
+	runCmd(t, icmd.Command("docker", "tag", "docker/compose", whalesayImageName))
 
 	// Tidy up my room
 	defer func() {
-		runCmd(t, icmd.Command("docker", "image", "rm", "-f", invocationImageName, "hashicorp/http-echo", serviceImageName, "docker/whalesay", whalesayImageName))
+		runCmd(t, icmd.Command("docker", "image", "rm", "-f", invocationImageName, "hashicorp/http-echo", serviceImageName, "docker/compose", whalesayImageName))
 	}()
 
 	// Push the images to the registry

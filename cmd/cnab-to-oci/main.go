@@ -12,7 +12,7 @@ func main() {
 	cmd := &cobra.Command{
 		Use:          "cnab-to-oci <subcommand> [options]",
 		SilenceUsage: true,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 			level, err := logrus.ParseLevel(logLevel)
 			if err != nil {
 				return err

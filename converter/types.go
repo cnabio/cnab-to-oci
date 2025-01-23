@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/cnabio/cnab-go/bundle"
+	"github.com/distribution/distribution/manifest/schema2"
 	"github.com/docker/distribution"
-	"github.com/docker/distribution/manifest/schema2"
 	"github.com/opencontainers/go-digest"
 	ocischema "github.com/opencontainers/image-spec/specs-go"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"

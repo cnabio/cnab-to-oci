@@ -8,8 +8,8 @@ import (
 	"github.com/cnabio/cnab-go/bundle"
 	"github.com/cnabio/cnab-to-oci/remotes"
 	containerdRemotes "github.com/containerd/containerd/remotes"
+	"github.com/distribution/reference"
 	"github.com/docker/cli/cli/config"
-	"github.com/docker/distribution/reference"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +29,7 @@ func fixupCmd() *cobra.Command {
 		Short: "Fixes the digest of an image",
 		Long:  "The fixup command resolves all the digest references from a registry and patches the bundle.json with them.",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			opts.input = args[0]
 			return runFixup(opts)
 		},

@@ -19,14 +19,14 @@ func TestPromisesNominal(t *testing.T) {
 	scheduler := newErrgroupScheduler(ctx, 4, 5)
 	var deps []dependency
 	for i := 0; i < 4; i++ {
-		deps = append(deps, scheduler.schedule(func(ctx context.Context) error {
+		deps = append(deps, scheduler.schedule(func(_ context.Context) error {
 			mut.Lock()
 			defer mut.Unlock()
 			n++
 			return nil
 		}))
 	}
-	final := newPromise(scheduler, whenAll(deps)).then(func(ctx context.Context) error {
+	final := newPromise(scheduler, whenAll(deps)).then(func(_ context.Context) error {
 		dependingValue = n
 		return nil
 	})
@@ -63,7 +63,7 @@ func TestPromisesErrorUnblock(t *testing.T) {
 		done = true
 		return nil
 	})
-	erroring := scheduler.schedule(func(ctx context.Context) error {
+	erroring := scheduler.schedule(func(_ context.Context) error {
 		return errors.New("boom")
 	})
 	assert.ErrorContains(t, erroring.wait(), "boom")
@@ -75,11 +75,11 @@ func TestPromisesScheduleErroredDontBlockDontRun(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	scheduler := newErrgroupScheduler(ctx, 4, 5)
-	errErroringTask := scheduler.schedule(func(ctx context.Context) error {
+	errErroringTask := scheduler.schedule(func(_ context.Context) error {
 		return errors.New("boom")
 	}).wait()
 	var done bool
-	errAfterError := scheduler.schedule(func(ctx context.Context) error {
+	errAfterError := scheduler.schedule(func(_ context.Context) error {
 		done = true
 		return nil
 	}).wait()
@@ -92,12 +92,12 @@ func TestPromisesErrorUnblockDeps(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	scheduler := newErrgroupScheduler(ctx, 4, 5)
-	dep := scheduler.schedule(func(ctx context.Context) error {
+	dep := scheduler.schedule(func(_ context.Context) error {
 		time.Sleep(200)
 		return errors.New("boom")
 	})
 	for i := 0; i < 50; i++ {
-		dep = dep.then(func(ctx context.Context) error {
+		dep = dep.then(func(_ context.Context) error {
 			return nil
 		})
 	}
@@ -109,9 +109,9 @@ func TestPromisesUnwrwap(t *testing.T) {
 	defer cancel()
 	scheduler := newErrgroupScheduler(ctx, 4, 5)
 	var done1, done2 bool
-	p := scheduleAndUnwrap(scheduler, func(ctx context.Context) (dependency, error) {
+	p := scheduleAndUnwrap(scheduler, func(_ context.Context) (dependency, error) {
 		done1 = true
-		return scheduler.schedule(func(ctx context.Context) error {
+		return scheduler.schedule(func(_ context.Context) error {
 			time.Sleep(200)
 			done2 = true
 			return nil
@@ -127,7 +127,7 @@ func TestPromisesUnwrwapWithError(t *testing.T) {
 	defer cancel()
 	scheduler := newErrgroupScheduler(ctx, 4, 5)
 	var done bool
-	p := scheduleAndUnwrap(scheduler, func(ctx context.Context) (dependency, error) {
+	p := scheduleAndUnwrap(scheduler, func(_ context.Context) (dependency, error) {
 		done = true
 		return nil, errors.New("boom")
 	})

@@ -11,7 +11,7 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes"
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -157,7 +157,7 @@ type descriptorContentHandler struct {
 
 func (h *descriptorContentHandler) createCopyTask(ctx context.Context, descProgress *descriptorProgress) (func(ctx context.Context) error, error) {
 	if _, scheduled := h.layersScheduled[descProgress.Digest]; scheduled {
-		return func(ctx context.Context) error {
+		return func(_ context.Context) error {
 			// Skip. We have already scheduled a copy of this layer
 			return nil
 		}, nil

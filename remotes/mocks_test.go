@@ -29,7 +29,7 @@ func (r *mockResolver) Resolve(_ context.Context, ref string) (string, ocischema
 	}
 	return ref, descriptor, nil
 }
-func (r *mockResolver) Fetcher(_ context.Context, ref string) (remotes.Fetcher, error) {
+func (r *mockResolver) Fetcher(_ context.Context, _ string) (remotes.Fetcher, error) {
 	return r.fetcher, nil
 }
 func (r *mockResolver) Pusher(_ context.Context, ref string) (remotes.Pusher, error) {
@@ -52,7 +52,7 @@ func newMockPusher(ret []error) *mockPusher {
 	}
 }
 
-func (p *mockPusher) Push(ctx context.Context, d ocischemav1.Descriptor) (content.Writer, error) {
+func (p *mockPusher) Push(_ context.Context, d ocischemav1.Descriptor) (content.Writer, error) {
 	p.pushedDescriptors = append(p.pushedDescriptors, d)
 	buf := &bytes.Buffer{}
 	p.buffers = append(p.buffers, buf)
@@ -72,11 +72,11 @@ type mockWriter struct {
 }
 
 func (w mockWriter) Digest() digest.Digest { return "" }
-func (w mockWriter) Commit(ctx context.Context, size int64, expected digest.Digest, opts ...content.Opt) error {
+func (w mockWriter) Commit(_ context.Context, _ int64, _ digest.Digest, _ ...content.Opt) error {
 	return nil
 }
 func (w mockWriter) Status() (content.Status, error) { return content.Status{}, nil }
-func (w mockWriter) Truncate(size int64) error       { return nil }
+func (w mockWriter) Truncate(_ int64) error          { return nil }
 
 type nopWriteCloser struct {
 	*bytes.Buffer
@@ -89,7 +89,7 @@ type mockFetcher struct {
 	indexBuffers []*bytes.Buffer
 }
 
-func (f *mockFetcher) Fetch(ctx context.Context, desc ocischemav1.Descriptor) (io.ReadCloser, error) {
+func (f *mockFetcher) Fetch(_ context.Context, _ ocischemav1.Descriptor) (io.ReadCloser, error) {
 	rc := io.NopCloser(f.indexBuffers[0])
 	f.indexBuffers = f.indexBuffers[1:]
 	return rc, nil
@@ -98,7 +98,7 @@ func (f *mockFetcher) Fetch(ctx context.Context, desc ocischemav1.Descriptor) (i
 type mockReadCloser struct {
 }
 
-func (rc mockReadCloser) Read(p []byte) (n int, err error) {
+func (rc mockReadCloser) Read(_ []byte) (n int, err error) {
 	return 0, io.EOF
 }
 
@@ -115,11 +115,11 @@ func newMockImageClient() *mockImageClient {
 	return &mockImageClient{taggedImages: map[string]string{}}
 }
 
-func (c *mockImageClient) ImagePush(ctx context.Context, ref string, options image.PushOptions) (io.ReadCloser, error) {
+func (c *mockImageClient) ImagePush(_ context.Context, _ string, _ image.PushOptions) (io.ReadCloser, error) {
 	c.pushedImages++
 	return mockReadCloser{}, nil
 }
-func (c *mockImageClient) ImageTag(ctx context.Context, image, ref string) error {
+func (c *mockImageClient) ImageTag(_ context.Context, image, ref string) error {
 	c.taggedImages[image] = ref
 	return nil
 }

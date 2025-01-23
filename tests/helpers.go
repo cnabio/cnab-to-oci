@@ -4,7 +4,7 @@ import (
 	"github.com/cnabio/cnab-go/bundle"
 	"github.com/cnabio/cnab-go/bundle/definition"
 	"github.com/cnabio/cnab-to-oci/relocation"
-	"github.com/docker/distribution/manifest/schema2"
+	"github.com/distribution/distribution/manifest/schema2"
 	"github.com/opencontainers/go-digest"
 	ocischema "github.com/opencontainers/image-spec/specs-go"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"

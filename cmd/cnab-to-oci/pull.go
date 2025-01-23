@@ -8,7 +8,7 @@ import (
 
 	"github.com/cnabio/cnab-to-oci/remotes"
 	"github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer"
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +25,7 @@ func pullCmd() *cobra.Command {
 		Use:   "pull <ref> [options]",
 		Short: "Pulls an image reference",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			opts.targetRef = args[0]
 			return runPull(opts)
 		},
