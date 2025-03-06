@@ -1,7 +1,6 @@
 module github.com/cnabio/cnab-to-oci
 
 go 1.23
-
 toolchain go1.23.3
 
 require (
@@ -20,7 +19,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/sync v0.10.0
+	golang.org/x/sync v0.12.0
 	gotest.tools/v3 v3.5.2
 )
 
