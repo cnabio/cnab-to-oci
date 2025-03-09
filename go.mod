@@ -17,7 +17,7 @@ require (
 	github.com/docker/docker v27.4.1+incompatible
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.1.0
+	github.com/opencontainers/image-spec v1.1.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
 	golang.org/x/sync v0.10.0
