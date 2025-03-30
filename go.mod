@@ -2,7 +2,7 @@ module github.com/cnabio/cnab-to-oci
 
 go 1.23.0
 
-toolchain go1.23.3
+toolchain go1.24.1
 
 require (
 	github.com/cnabio/cnab-go v0.25.2
@@ -14,7 +14,7 @@ require (
 	github.com/distribution/reference v0.6.1-0.20240718132515-8c942b0459df
 	github.com/docker/cli v28.0.2+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/docker/docker v28.0.2+incompatible
+	github.com/docker/docker v28.0.4+incompatible
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
