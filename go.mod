@@ -2,7 +2,7 @@ module github.com/cnabio/cnab-to-oci
 
 go 1.23.0
 
-toolchain go1.24.1
+toolchain go1.23.3
 
 require (
 	github.com/cnabio/cnab-go v0.25.2
