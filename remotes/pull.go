@@ -16,7 +16,6 @@ import (
 	"github.com/containerd/log"
 	"github.com/distribution/distribution/registry/client/auth"
 	"github.com/distribution/reference"
-	"github.com/docker/cli/opts"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -71,7 +70,7 @@ func getIndex(ctx context.Context, ref auth.Scope, resolver remotes.Resolver) (o
 	return index, indexDescriptor, nil
 }
 
-func getBundle(ctx context.Context, ref opts.NamedOption, resolver remotes.Resolver, index ocischemav1.Index) (*bundle.Bundle, error) {
+func getBundle(ctx context.Context, ref reference.Named, resolver remotes.Resolver, index ocischemav1.Index) (*bundle.Bundle, error) {
 	repoOnly, err := reference.ParseNormalizedNamed(ref.Name())
 	if err != nil {
 		return nil, fmt.Errorf("invalid bundle manifest reference name %q: %s", ref, err)
@@ -93,7 +92,7 @@ func getBundle(ctx context.Context, ref opts.NamedOption, resolver remotes.Resol
 	return getBundleConfig(ctx, ref, repoOnly, resolver, manifest)
 }
 
-func getConfigManifestDescriptor(ctx context.Context, ref opts.NamedOption, index ocischemav1.Index) (ocischemav1.Descriptor, error) {
+func getConfigManifestDescriptor(ctx context.Context, ref reference.Named, index ocischemav1.Index) (ocischemav1.Descriptor, error) {
 	logger := log.G(ctx)
 
 	logger.Debug("Getting Bundle Config Manifest Descriptor")
@@ -106,7 +105,7 @@ func getConfigManifestDescriptor(ctx context.Context, ref opts.NamedOption, inde
 	return configManifestDescriptor, nil
 }
 
-func getConfigManifest(ctx context.Context, ref opts.NamedOption, repoOnly reference.Named, resolver remotes.Resolver, configManifestDescriptor ocischemav1.Descriptor) (ocischemav1.Manifest, error) {
+func getConfigManifest(ctx context.Context, ref reference.Named, repoOnly reference.Named, resolver remotes.Resolver, configManifestDescriptor ocischemav1.Descriptor) (ocischemav1.Manifest, error) {
 	logger := log.G(ctx)
 
 	logger.Debugf("Getting Bundle Config Manifest %s", configManifestDescriptor.Digest)
@@ -127,7 +126,7 @@ func getConfigManifest(ctx context.Context, ref opts.NamedOption, repoOnly refer
 	return manifest, err
 }
 
-func getBundleConfig(ctx context.Context, ref opts.NamedOption, repoOnly reference.Named, resolver remotes.Resolver, manifest ocischemav1.Manifest) (*bundle.Bundle, error) {
+func getBundleConfig(ctx context.Context, ref reference.Named, repoOnly reference.Named, resolver remotes.Resolver, manifest ocischemav1.Manifest) (*bundle.Bundle, error) {
 	logger := log.G(ctx)
 
 	logger.Debugf("Fetching Bundle %s", manifest.Config.Digest)
