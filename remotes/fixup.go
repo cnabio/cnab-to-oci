@@ -139,8 +139,8 @@ func fixupImage(
 		return notifyError(notifyEvent, err)
 	}
 	defer cleaner()
-	if err = walkerDep.wait(); err != nil {
-		return notifyError(notifyEvent, err)
+	if walkerDep != nil {
+		return notifyError(notifyEvent, walkerDep)
 	}
 
 	notifyEvent(FixupEventTypeCopyImageEnd, "", nil)
