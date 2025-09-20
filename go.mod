@@ -10,15 +10,15 @@ require (
 	github.com/cyberphone/json-canonicalization v0.0.0-20241213102144-19d51d7fe467
 	github.com/distribution/distribution v2.8.3+incompatible
 	github.com/distribution/reference v0.6.1-0.20240718132515-8c942b0459df
-	github.com/docker/cli v28.3.3+incompatible
+	github.com/docker/cli v28.4.0+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/docker/docker v28.3.3+incompatible
+	github.com/docker/docker v28.4.0+incompatible
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.9.1
-	golang.org/x/sync v0.16.0
+	github.com/spf13/cobra v1.10.1
+	golang.org/x/sync v0.17.0
 	gotest.tools/v3 v3.5.2
 )
 
@@ -39,7 +39,6 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -58,7 +57,7 @@ require (
 	github.com/qri-io/jsonpointer v0.1.1 // indirect
 	github.com/qri-io/jsonschema v0.2.2-0.20210831022256-780655b2ba0e // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
-	github.com/spf13/pflag v1.0.6 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
