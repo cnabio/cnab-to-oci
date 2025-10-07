@@ -221,7 +221,6 @@ func (w *manifestWalker) collectCopyTasks(ctx context.Context, desc ocischemav1.
 	descProgress := &descriptorProgress{
 		Descriptor: desc,
 	}
-	fmt.Printf("Looking up %s\n", desc.Digest)
 	if parent != nil {
 		parent.addChild(descProgress)
 	} else {
@@ -281,7 +280,6 @@ func (w *manifestWalker) walk(ctx context.Context, desc ocischemav1.Descriptor) 
 	lastDepth := tasks[0].depth
 	for _, task := range tasks {
 		if task.depth != lastDepth {
-			fmt.Println("Depth changing, finishing tasks")
 			err = workGroup.Wait()
 			if err != nil {
 				return err
@@ -289,7 +287,6 @@ func (w *manifestWalker) walk(ctx context.Context, desc ocischemav1.Descriptor) 
 			workGroup, c = errgroup.WithContext(ctx)
 			workGroup.SetLimit(4)
 		}
-		fmt.Printf("Copying task %s, at depth %v\n", task.digest, task.depth)
 		workGroup.Go(func() error {
 			select {
 			case <-c.Done():
