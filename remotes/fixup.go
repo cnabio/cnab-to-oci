@@ -134,14 +134,11 @@ func fixupImage(
 	}
 
 	// Prepare and run the copier
-	walkerDep, cleaner, err := makeManifestWalker(ctx, sourceFetcher, notifyEvent, cfg, fixupInfo, progress)
+	cleaner, err := makeManifestWalker(ctx, sourceFetcher, notifyEvent, cfg, fixupInfo, progress)
 	if err != nil {
 		return notifyError(notifyEvent, err)
 	}
 	defer cleaner()
-	if walkerDep != nil {
-		return notifyError(notifyEvent, walkerDep)
-	}
 
 	notifyEvent(FixupEventTypeCopyImageEnd, "", nil)
 	return nil

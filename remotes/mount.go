@@ -189,25 +189,25 @@ func (h *descriptorContentHandler) createCopyTask(ctx context.Context, descProgr
 }
 
 type manifestWalker struct {
-	getChildren    images.HandlerFunc
-	eventNotifier  eventNotifier
-	scheduler      scheduler
-	progress       *progress
-	contentHandler *descriptorContentHandler
+	getChildren       images.HandlerFunc
+	eventNotifier     eventNotifier
+	progress          *progress
+	contentHandler    *descriptorContentHandler
+	maxConcurrentJobs int
 }
 
 func newManifestWalker(
 	eventNotifier eventNotifier,
-	scheduler scheduler,
 	progress *progress,
-	descriptorContentHandler *descriptorContentHandler) *manifestWalker {
+	descriptorContentHandler *descriptorContentHandler,
+	maxConcurrentJobs int) *manifestWalker {
 	sourceFetcher := descriptorContentHandler.descriptorCopier.sourceFetcher
 	return &manifestWalker{
-		eventNotifier:  eventNotifier,
-		getChildren:    images.ChildrenHandler(&imageContentProvider{sourceFetcher}),
-		scheduler:      scheduler,
-		progress:       progress,
-		contentHandler: descriptorContentHandler,
+		eventNotifier:     eventNotifier,
+		getChildren:       images.ChildrenHandler(&imageContentProvider{sourceFetcher}),
+		progress:          progress,
+		contentHandler:    descriptorContentHandler,
+		maxConcurrentJobs: maxConcurrentJobs,
 	}
 }
 
@@ -276,7 +276,7 @@ func (w *manifestWalker) walk(ctx context.Context, desc ocischemav1.Descriptor) 
 	})
 
 	workGroup, c := errgroup.WithContext(ctx)
-	workGroup.SetLimit(4)
+	workGroup.SetLimit(w.maxConcurrentJobs)
 	lastDepth := tasks[0].depth
 	for _, task := range tasks {
 		if task.depth != lastDepth {
@@ -285,7 +285,7 @@ func (w *manifestWalker) walk(ctx context.Context, desc ocischemav1.Descriptor) 
 				return err
 			}
 			workGroup, c = errgroup.WithContext(ctx)
-			workGroup.SetLimit(4)
+			workGroup.SetLimit(w.maxConcurrentJobs)
 		}
 		workGroup.Go(func() error {
 			select {
