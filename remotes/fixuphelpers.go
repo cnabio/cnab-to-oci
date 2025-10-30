@@ -77,23 +77,21 @@ func makeSourceFetcher(ctx context.Context, resolver remotes.Resolver, sourceRef
 }
 
 func makeManifestWalker(ctx context.Context, sourceFetcher remotes.Fetcher,
-	notifyEvent eventNotifier, cfg fixupConfig, fixupInfo imageFixupInfo, progress *progress) (promise, func(), error) {
+	notifyEvent eventNotifier, cfg fixupConfig, fixupInfo imageFixupInfo, progress *progress) (func(), error) {
 	copier, err := newDescriptorCopier(ctx, cfg.resolver, sourceFetcher, fixupInfo.targetRepo.String(), notifyEvent, fixupInfo.sourceRef)
 	if err != nil {
-		return promise{}, nil, err
+		return nil, err
 	}
 	descriptorContentHandler := &descriptorContentHandler{
 		descriptorCopier: copier,
 		targetRepo:       fixupInfo.targetRepo.String(),
 	}
 	ctx, cancel := context.WithCancel(ctx)
-	scheduler := newErrgroupScheduler(ctx, cfg.maxConcurrentJobs, cfg.jobsBufferLength)
 	cleaner := func() {
 		cancel()
-		scheduler.drain() //nolint:errcheck
 	}
-	walker := newManifestWalker(notifyEvent, scheduler, progress, descriptorContentHandler)
-	return walker.walk(scheduler.ctx(), fixupInfo.resolvedDescriptor, nil), cleaner, nil
+	walker := newManifestWalker(notifyEvent, progress, descriptorContentHandler, cfg.maxConcurrentJobs)
+	return cleaner, walker.walk(ctx, fixupInfo.resolvedDescriptor)
 }
 
 func notifyError(notifyEvent eventNotifier, err error) error {

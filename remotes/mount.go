@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/containerd/containerd/content"
@@ -14,6 +15,7 @@ import (
 	"github.com/distribution/reference"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -187,34 +189,35 @@ func (h *descriptorContentHandler) createCopyTask(ctx context.Context, descProgr
 }
 
 type manifestWalker struct {
-	getChildren    images.HandlerFunc
-	eventNotifier  eventNotifier
-	scheduler      scheduler
-	progress       *progress
-	contentHandler *descriptorContentHandler
+	getChildren       images.HandlerFunc
+	eventNotifier     eventNotifier
+	progress          *progress
+	contentHandler    *descriptorContentHandler
+	maxConcurrentJobs int
 }
 
 func newManifestWalker(
 	eventNotifier eventNotifier,
-	scheduler scheduler,
 	progress *progress,
-	descriptorContentHandler *descriptorContentHandler) *manifestWalker {
+	descriptorContentHandler *descriptorContentHandler,
+	maxConcurrentJobs int) *manifestWalker {
 	sourceFetcher := descriptorContentHandler.descriptorCopier.sourceFetcher
 	return &manifestWalker{
-		eventNotifier:  eventNotifier,
-		getChildren:    images.ChildrenHandler(&imageContentProvider{sourceFetcher}),
-		scheduler:      scheduler,
-		progress:       progress,
-		contentHandler: descriptorContentHandler,
+		eventNotifier:     eventNotifier,
+		getChildren:       images.ChildrenHandler(&imageContentProvider{sourceFetcher}),
+		progress:          progress,
+		contentHandler:    descriptorContentHandler,
+		maxConcurrentJobs: maxConcurrentJobs,
 	}
 }
 
-func (w *manifestWalker) walk(ctx context.Context, desc ocischemav1.Descriptor, parent *descriptorProgress) promise {
-	select {
-	case <-ctx.Done():
-		return newPromise(w.scheduler, ctx)
-	default:
-	}
+type copyTask struct {
+	digest   digest.Digest
+	copyTask func(ctx context.Context) error
+	depth    int
+}
+
+func (w *manifestWalker) collectCopyTasks(ctx context.Context, desc ocischemav1.Descriptor, parent *descriptorProgress, depth int) ([]copyTask, error) {
 	descProgress := &descriptorProgress{
 		Descriptor: desc,
 	}
@@ -223,29 +226,83 @@ func (w *manifestWalker) walk(ctx context.Context, desc ocischemav1.Descriptor, 
 	} else {
 		w.progress.addRoot(descProgress)
 	}
+
+	var allItems []copyTask
 	copyOrMountWorkItem, err := w.contentHandler.createCopyTask(ctx, descProgress)
 	if errors.Is(err, errdefs.ErrAlreadyExists) {
 		w.eventNotifier.reportProgress(nil)
-		return newPromise(w.scheduler, doneDependency{})
+		return nil, nil
 	}
 	if err != nil {
 		w.eventNotifier.reportProgress(err)
-		return newPromise(w.scheduler, failedDependency{err: err})
+		return nil, err
 	}
-	childrenPromise := scheduleAndUnwrap(w.scheduler, func(ctx context.Context) (dependency, error) {
-		var deps []dependency
-		children, err := w.getChildren.Handle(ctx, desc)
+	allItems = append(allItems, copyTask{
+		desc.Digest,
+		copyOrMountWorkItem,
+		depth,
+	})
+	children, err := w.getChildren.Handle(ctx, desc)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, c := range children {
+		childCopyTasks, err := w.collectCopyTasks(ctx, c, descProgress, depth+1)
 		if err != nil {
 			return nil, err
 		}
-		for _, c := range children {
-			dep := w.walk(ctx, c, descProgress)
-			deps = append(deps, dep)
-		}
-		return newPromise(w.scheduler, whenAll(deps)), nil
+		allItems = append(allItems, childCopyTasks...)
+	}
+
+	return allItems, nil
+}
+
+func (w *manifestWalker) walk(ctx context.Context, desc ocischemav1.Descriptor) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	tasks, err := w.collectCopyTasks(ctx, desc, nil, 0)
+	if err != nil {
+		return err
+	}
+	if len(tasks) == 0 {
+		return nil
+	}
+	sort.Slice(tasks, func(i, j int) bool {
+		return tasks[i].depth > tasks[j].depth
 	})
 
-	return childrenPromise.then(copyOrMountWorkItem)
+	workGroup, c := errgroup.WithContext(ctx)
+	workGroup.SetLimit(w.maxConcurrentJobs)
+	lastDepth := tasks[0].depth
+	for _, task := range tasks {
+		if task.depth != lastDepth {
+			err = workGroup.Wait()
+			if err != nil {
+				return err
+			}
+			workGroup, c = errgroup.WithContext(ctx)
+			workGroup.SetLimit(w.maxConcurrentJobs)
+		}
+		workGroup.Go(func() error {
+			select {
+			case <-c.Done():
+				return c.Err()
+			default:
+			}
+			err = task.copyTask(c)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+		lastDepth = task.depth
+	}
+
+	return workGroup.Wait()
 }
 
 type eventNotifier func(eventType FixupEventType, message string, err error)
