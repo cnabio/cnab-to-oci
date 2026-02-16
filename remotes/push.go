@@ -21,10 +21,7 @@ import (
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/credentials"
 	configtypes "github.com/docker/cli/cli/config/types"
-	"github.com/docker/docker/api/types/image"
-	registrytypes "github.com/docker/docker/api/types/registry"
-	"github.com/docker/docker/pkg/jsonmessage"
-	"github.com/docker/docker/registry"
+	"github.com/moby/moby/client"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -248,7 +245,7 @@ func pushBundleConfigDescriptor(ctx context.Context, name string, resolver remot
 }
 
 func pushTaggedImage(ctx context.Context, imageClient internal.ImageClient, targetRef reference.Named, out io.Writer) error {
-	repoInfo, err := registry.ParseRepositoryInfo(targetRef)
+	repoInfo, err := ParseRepositoryInfo(targetRef)
 	if err != nil {
 		return err
 	}
@@ -259,14 +256,14 @@ func pushTaggedImage(ctx context.Context, imageClient internal.ImageClient, targ
 		return err
 	}
 
-	reader, err := imageClient.ImagePush(ctx, targetRef.String(), image.PushOptions{
+	reader, err := imageClient.ImagePush(ctx, targetRef.String(), client.ImagePushOptions{
 		RegistryAuth: encodedAuth,
 	})
 	if err != nil {
 		return err
 	}
 	defer reader.Close()
-	return jsonmessage.DisplayJSONMessagesStream(reader, out, 0, false, nil)
+	return DisplayJSONMessagesStream(reader, out)
 }
 
 func encodeAuthToBase64(authConfig configtypes.AuthConfig) (string, error) {
@@ -277,12 +274,12 @@ func encodeAuthToBase64(authConfig configtypes.AuthConfig) (string, error) {
 	return base64.URLEncoding.EncodeToString(buf), nil
 }
 
-func resolveAuthConfig(index *registrytypes.IndexInfo) configtypes.AuthConfig {
+func resolveAuthConfig(index *IndexInfo) configtypes.AuthConfig {
 	cfg := config.LoadDefaultConfigFile(os.Stderr)
 
 	hostName := index.Name
 	if index.Official {
-		hostName = registry.IndexServer
+		hostName = legacyDefaultDomain
 	}
 
 	configs, err := cfg.GetAllCredentials()

@@ -11,7 +11,6 @@ import (
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/distribution/reference"
 	"github.com/docker/cli/cli/config/configfile"
-	"github.com/docker/docker/registry"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -39,7 +38,7 @@ func (r *multiRegistryResolver) Resolve(ctx context.Context, ref string) (name s
 		if otherErr != nil {
 			return
 		}
-		repoInfo, otherErr := registry.ParseRepositoryInfo(ref)
+		repoInfo, otherErr := ParseRepositoryInfo(ref)
 		if otherErr != nil {
 			return
 		}
@@ -64,8 +63,8 @@ func (r *multiRegistryResolver) Pusher(ctx context.Context, ref string) (remotes
 // CreateResolver creates a docker registry resolver, using the local docker CLI credentials
 func CreateResolver(cfg *configfile.ConfigFile, insecureRegistries ...string) remotes.Resolver {
 	authCreds := docker.WithAuthCreds(func(hostName string) (string, string, error) {
-		if hostName == registry.DefaultV2Registry.Host {
-			hostName = registry.IndexServer
+		if hostName == defaultRegistryHost {
+			hostName = legacyDefaultDomain
 		}
 		a, err := cfg.GetAuthConfig(hostName)
 		if err != nil {

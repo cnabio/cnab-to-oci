@@ -5,10 +5,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"iter"
 
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/remotes"
-	"github.com/docker/docker/api/types/image"
+	"github.com/moby/moby/api/types/jsonstream"
+	"github.com/moby/moby/client"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -106,6 +108,14 @@ func (rc mockReadCloser) Close() error {
 	return nil
 }
 
+func (rc mockReadCloser) JSONMessages(_ context.Context) iter.Seq2[jsonstream.Message, error] {
+	return func(yield func(jsonstream.Message, error) bool) {}
+}
+
+func (rc mockReadCloser) Wait(_ context.Context) error {
+	return nil
+}
+
 type mockImageClient struct {
 	pushedImages int
 	taggedImages map[string]string
@@ -115,7 +125,7 @@ func newMockImageClient() *mockImageClient {
 	return &mockImageClient{taggedImages: map[string]string{}}
 }
 
-func (c *mockImageClient) ImagePush(_ context.Context, _ string, _ image.PushOptions) (io.ReadCloser, error) {
+func (c *mockImageClient) ImagePush(_ context.Context, _ string, _ client.ImagePushOptions) (client.ImagePushResponse, error) {
 	c.pushedImages++
 	return mockReadCloser{}, nil
 }
