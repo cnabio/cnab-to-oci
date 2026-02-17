@@ -76,7 +76,7 @@ func runPush(opts pushOptions) error {
 		fixupOptions = append(fixupOptions, remotes.WithAutoBundleUpdate())
 	}
 	if opts.pushImages {
-		cli, err := client.NewClientWithOpts(client.FromEnv)
+		cli, err := client.New(client.FromEnv)
 		if err != nil {
 			return err
 		}

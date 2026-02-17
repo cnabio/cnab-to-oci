@@ -38,13 +38,10 @@ func (r *multiRegistryResolver) Resolve(ctx context.Context, ref string) (name s
 		if otherErr != nil {
 			return
 		}
-		repoInfo, otherErr := ParseRepositoryInfo(ref)
-		if otherErr != nil {
-			return
-		}
+		hostName := reference.Domain(ref)
 
 		// Check if the registry is not flagged with skipTLS, which is one common explanation for this error
-		if _, skipTLS := r.skipTLSRegistries[repoInfo.Index.Name]; !skipTLS {
+		if _, skipTLS := r.skipTLSRegistries[hostName]; !skipTLS {
 			err = fmt.Errorf("possible attempt to access an insecure registry without skipping TLS verification detected: %w", err)
 		}
 	}

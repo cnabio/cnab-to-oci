@@ -109,7 +109,7 @@ func (rc mockReadCloser) Close() error {
 }
 
 func (rc mockReadCloser) JSONMessages(_ context.Context) iter.Seq2[jsonstream.Message, error] {
-	return func(yield func(jsonstream.Message, error) bool) {}
+	return func(_ func(jsonstream.Message, error) bool) {}
 }
 
 func (rc mockReadCloser) Wait(_ context.Context) error {
