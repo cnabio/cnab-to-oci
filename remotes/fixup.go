@@ -14,6 +14,7 @@ import (
 	"github.com/containerd/platforms"
 	"github.com/distribution/reference"
 	"github.com/hashicorp/go-multierror"
+	"github.com/moby/moby/client"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -326,7 +327,10 @@ func ref(str string) (reference.Named, error) {
 func pushImageToTarget(ctx context.Context, src string, cfg fixupConfig) (ocischemav1.Descriptor, error) {
 	taggedRef := reference.TagNameOnly(cfg.targetRef)
 
-	if err := cfg.imageClient.ImageTag(ctx, src, cfg.targetRef.String()); err != nil {
+	if _, err := cfg.imageClient.ImageTag(ctx, client.ImageTagOptions{
+		Source: src,
+		Target: cfg.targetRef.String(),
+	}); err != nil {
 		return ocischemav1.Descriptor{}, fmt.Errorf("failed to push image %q, make sure the image exists locally: %s", src, err)
 	}
 

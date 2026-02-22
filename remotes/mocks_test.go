@@ -129,7 +129,7 @@ func (c *mockImageClient) ImagePush(_ context.Context, _ string, _ client.ImageP
 	c.pushedImages++
 	return mockReadCloser{}, nil
 }
-func (c *mockImageClient) ImageTag(_ context.Context, image, ref string) error {
-	c.taggedImages[image] = ref
-	return nil
+func (c *mockImageClient) ImageTag(_ context.Context, options client.ImageTagOptions) (client.ImageTagResult, error) {
+	c.taggedImages[options.Source] = options.Target
+	return client.ImageTagResult{}, nil
 }

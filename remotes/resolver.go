@@ -61,7 +61,7 @@ func (r *multiRegistryResolver) Pusher(ctx context.Context, ref string) (remotes
 func CreateResolver(cfg *configfile.ConfigFile, insecureRegistries ...string) remotes.Resolver {
 	authCreds := docker.WithAuthCreds(func(hostName string) (string, string, error) {
 		if hostName == defaultRegistryHost {
-			hostName = legacyDefaultDomain
+			hostName = "https://" + legacyDefaultDomain + "/v1/"
 		}
 		a, err := cfg.GetAuthConfig(hostName)
 		if err != nil {

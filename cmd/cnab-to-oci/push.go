@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/cnabio/cnab-go/bundle"
-	"github.com/cnabio/cnab-to-oci/internal"
 	"github.com/cnabio/cnab-to-oci/remotes"
 	"github.com/distribution/reference"
 	"github.com/moby/moby/client"
@@ -80,7 +79,7 @@ func runPush(opts pushOptions) error {
 		if err != nil {
 			return err
 		}
-		fixupOptions = append(fixupOptions, remotes.WithPushImages(&internal.ClientWrapper{Client: cli}, os.Stdout))
+		fixupOptions = append(fixupOptions, remotes.WithPushImages(cli, os.Stdout))
 	}
 	relocationMap, err := remotes.FixupBundle(context.Background(), &b, ref, resolver, fixupOptions...)
 	if err != nil {
