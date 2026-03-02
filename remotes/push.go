@@ -2,7 +2,6 @@ package remotes
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,10 +20,10 @@ import (
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/credentials"
 	configtypes "github.com/docker/cli/cli/config/types"
-	"github.com/docker/docker/api/types/image"
-	registrytypes "github.com/docker/docker/api/types/registry"
-	"github.com/docker/docker/pkg/jsonmessage"
-	"github.com/docker/docker/registry"
+	"github.com/moby/moby/api/pkg/authconfig"
+	registrytypes "github.com/moby/moby/api/types/registry"
+	"github.com/moby/moby/client"
+	"github.com/moby/moby/client/pkg/jsonmessage"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -248,18 +247,20 @@ func pushBundleConfigDescriptor(ctx context.Context, name string, resolver remot
 }
 
 func pushTaggedImage(ctx context.Context, imageClient internal.ImageClient, targetRef reference.Named, out io.Writer) error {
-	repoInfo, err := registry.ParseRepositoryInfo(targetRef)
+	authConfig := resolveAuthConfig(targetRef)
+	encodedAuth, err := authconfig.Encode(registrytypes.AuthConfig{
+		Username:      authConfig.Username,
+		Password:      authConfig.Password,
+		ServerAddress: authConfig.ServerAddress,
+		Auth:          authConfig.Auth,
+		IdentityToken: authConfig.IdentityToken,
+		RegistryToken: authConfig.RegistryToken,
+	})
 	if err != nil {
 		return err
 	}
 
-	authConfig := resolveAuthConfig(repoInfo.Index)
-	encodedAuth, err := encodeAuthToBase64(authConfig)
-	if err != nil {
-		return err
-	}
-
-	reader, err := imageClient.ImagePush(ctx, targetRef.String(), image.PushOptions{
+	reader, err := imageClient.ImagePush(ctx, targetRef.String(), client.ImagePushOptions{
 		RegistryAuth: encodedAuth,
 	})
 	if err != nil {
@@ -269,20 +270,12 @@ func pushTaggedImage(ctx context.Context, imageClient internal.ImageClient, targ
 	return jsonmessage.DisplayJSONMessagesStream(reader, out, 0, false, nil)
 }
 
-func encodeAuthToBase64(authConfig configtypes.AuthConfig) (string, error) {
-	buf, err := json.Marshal(authConfig)
-	if err != nil {
-		return "", err
-	}
-	return base64.URLEncoding.EncodeToString(buf), nil
-}
-
-func resolveAuthConfig(index *registrytypes.IndexInfo) configtypes.AuthConfig {
+func resolveAuthConfig(targetRef reference.Named) configtypes.AuthConfig {
 	cfg := config.LoadDefaultConfigFile(os.Stderr)
 
-	hostName := index.Name
-	if index.Official {
-		hostName = registry.IndexServer
+	hostName := reference.Domain(targetRef)
+	if hostName == defaultDomain || hostName == legacyDefaultDomain || hostName == defaultRegistryHost {
+		hostName = legacyDefaultDomain
 	}
 
 	configs, err := cfg.GetAllCredentials()

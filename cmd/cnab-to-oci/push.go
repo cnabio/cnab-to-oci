@@ -10,7 +10,7 @@ import (
 	"github.com/cnabio/cnab-go/bundle"
 	"github.com/cnabio/cnab-to-oci/remotes"
 	"github.com/distribution/reference"
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/client"
 	"github.com/spf13/cobra"
 )
 
@@ -75,7 +75,7 @@ func runPush(opts pushOptions) error {
 		fixupOptions = append(fixupOptions, remotes.WithAutoBundleUpdate())
 	}
 	if opts.pushImages {
-		cli, err := client.NewClientWithOpts(client.FromEnv)
+		cli, err := client.New(client.FromEnv)
 		if err != nil {
 			return err
 		}

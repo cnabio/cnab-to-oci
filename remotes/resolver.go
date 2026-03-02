@@ -11,7 +11,6 @@ import (
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/distribution/reference"
 	"github.com/docker/cli/cli/config/configfile"
-	"github.com/docker/docker/registry"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -39,13 +38,10 @@ func (r *multiRegistryResolver) Resolve(ctx context.Context, ref string) (name s
 		if otherErr != nil {
 			return
 		}
-		repoInfo, otherErr := registry.ParseRepositoryInfo(ref)
-		if otherErr != nil {
-			return
-		}
+		hostName := reference.Domain(ref)
 
 		// Check if the registry is not flagged with skipTLS, which is one common explanation for this error
-		if _, skipTLS := r.skipTLSRegistries[repoInfo.Index.Name]; !skipTLS {
+		if _, skipTLS := r.skipTLSRegistries[hostName]; !skipTLS {
 			err = fmt.Errorf("possible attempt to access an insecure registry without skipping TLS verification detected: %w", err)
 		}
 	}
@@ -64,8 +60,8 @@ func (r *multiRegistryResolver) Pusher(ctx context.Context, ref string) (remotes
 // CreateResolver creates a docker registry resolver, using the local docker CLI credentials
 func CreateResolver(cfg *configfile.ConfigFile, insecureRegistries ...string) remotes.Resolver {
 	authCreds := docker.WithAuthCreds(func(hostName string) (string, string, error) {
-		if hostName == registry.DefaultV2Registry.Host {
-			hostName = registry.IndexServer
+		if hostName == defaultRegistryHost {
+			hostName = "https://" + legacyDefaultDomain + "/v1/"
 		}
 		a, err := cfg.GetAuthConfig(hostName)
 		if err != nil {
