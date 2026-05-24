@@ -4,13 +4,13 @@ go 1.25.8
 
 require (
 	github.com/cnabio/cnab-go v0.26.2
-	github.com/containerd/containerd v1.7.31
+	github.com/containerd/containerd v1.7.32
 	github.com/containerd/log v0.1.0
 	github.com/containerd/platforms v0.2.1
 	github.com/cyberphone/json-canonicalization v0.0.0-20241213102144-19d51d7fe467
 	github.com/distribution/distribution v2.8.3+incompatible
 	github.com/distribution/reference v0.6.1-0.20240718132515-8c942b0459df
-	github.com/docker/cli v29.4.2+incompatible
+	github.com/docker/cli v29.5.2+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/moby/moby/api v1.54.2
