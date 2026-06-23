@@ -4,7 +4,7 @@ go 1.25.8
 
 require (
 	github.com/cnabio/cnab-go v0.26.2
-	github.com/containerd/containerd v1.7.31
+	github.com/containerd/containerd v1.7.33
 	github.com/containerd/log v0.1.0
 	github.com/containerd/platforms v0.2.1
 	github.com/cyberphone/json-canonicalization v0.0.0-20241213102144-19d51d7fe467
