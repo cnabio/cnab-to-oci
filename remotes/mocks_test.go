@@ -7,8 +7,8 @@ import (
 	"io"
 	"iter"
 
-	"github.com/containerd/containerd/content"
-	"github.com/containerd/containerd/remotes"
+	"github.com/containerd/containerd/v2/core/content"
+	"github.com/containerd/containerd/v2/core/remotes"
 	"github.com/moby/moby/api/types/jsonstream"
 	"github.com/moby/moby/client"
 	"github.com/opencontainers/go-digest"
