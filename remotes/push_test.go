@@ -70,14 +70,14 @@ const (
    "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
    "config": {
       "mediaType": "application/vnd.docker.container.image.v1+json",
-      "size": 1596,
-      "digest": "sha256:dbe3480b9cb300f389e8d02e4a682f9107772468feb6845f912dc8deed6d76fd"
+      "digest": "sha256:dbe3480b9cb300f389e8d02e4a682f9107772468feb6845f912dc8deed6d76fd",
+      "size": 1596
    },
    "layers": [
       {
          "mediaType": "application/vnd.docker.container.image.v1+json",
-         "size": 1596,
-         "digest": "sha256:dbe3480b9cb300f389e8d02e4a682f9107772468feb6845f912dc8deed6d76fd"
+         "digest": "sha256:dbe3480b9cb300f389e8d02e4a682f9107772468feb6845f912dc8deed6d76fd",
+         "size": 1596
       }
    ]
 }`

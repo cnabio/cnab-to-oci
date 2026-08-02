@@ -14,7 +14,6 @@ import (
 	"github.com/containerd/containerd/v2/core/remotes"
 	"github.com/containerd/errdefs"
 	"github.com/containerd/log"
-	"github.com/distribution/distribution/registry/client/auth"
 	"github.com/distribution/reference"
 	"github.com/opencontainers/go-digest"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -40,7 +39,7 @@ func Pull(ctx context.Context, ref reference.Named, resolver remotes.Resolver) (
 	return b, relocationMap, descriptor.Digest, nil
 }
 
-func getIndex(ctx context.Context, ref auth.Scope, resolver remotes.Resolver) (ocischemav1.Index, ocischemav1.Descriptor, error) {
+func getIndex(ctx context.Context, ref reference.Named, resolver remotes.Resolver) (ocischemav1.Index, ocischemav1.Descriptor, error) {
 	logger := log.G(ctx)
 
 	logger.Debug("Getting OCI Index Descriptor")
