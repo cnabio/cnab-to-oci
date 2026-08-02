@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/cnabio/cnab-go/bundle"
-	"github.com/distribution/distribution/manifest/schema2"
-	"github.com/docker/distribution"
+	"github.com/distribution/distribution/v3/manifest/schema2"
 	"github.com/opencontainers/go-digest"
 	ocischema "github.com/opencontainers/image-spec/specs-go"
 	ocischemav1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -83,21 +82,18 @@ func prepareOCIBundleConfig(mediaType string) bundleConfigPreparer {
 	}
 }
 
-func nonOCIDescriptorOf(blob []byte) distribution.Descriptor {
-	return distribution.Descriptor{
+func prepareNonOCIBundleConfig(blob []byte) (*PreparedBundleConfig, error) {
+	desc := ocischemav1.Descriptor{
 		MediaType: schema2.MediaTypeImageConfig,
 		Size:      int64(len(blob)),
 		Digest:    digest.FromBytes(blob),
 	}
-}
-
-func prepareNonOCIBundleConfig(blob []byte) (*PreparedBundleConfig, error) {
-	desc := nonOCIDescriptorOf(blob)
 	man, err := schema2.FromStruct(schema2.Manifest{
-		Versioned: schema2.SchemaVersion,
+		Versioned: ocischema.Versioned{SchemaVersion: 2},
+		MediaType: schema2.MediaTypeManifest,
 		// Add a descriptor for the configuration because some registries
 		// require the layers property to be defined and non-empty
-		Layers: []distribution.Descriptor{
+		Layers: []ocischemav1.Descriptor{
 			desc,
 		},
 		Config: desc,
