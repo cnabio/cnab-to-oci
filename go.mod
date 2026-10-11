@@ -3,7 +3,7 @@ module github.com/cnabio/cnab-to-oci
 go 1.26.8
 
 require (
-	github.com/cnabio/cnab-go v0.26.4
+	github.com/cnabio/cnab-go v0.26.5
 	github.com/containerd/containerd/v2 v2.4.1
 	github.com/containerd/errdefs v1.0.0
 	github.com/containerd/log v0.2.0
@@ -19,7 +19,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
-	golang.org/x/sync v0.23.0
+	golang.org/x/sync v0.24.0
 	gotest.tools/v3 v3.5.2
 )
 
