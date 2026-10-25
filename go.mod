@@ -11,7 +11,7 @@ require (
 	github.com/cyberphone/json-canonicalization v0.0.0-20241213102144-19d51d7fe467
 	github.com/distribution/distribution/v3 v3.1.2
 	github.com/distribution/reference v0.6.1-0.20240718132515-8c942b0459df
-	github.com/docker/cli v29.9.1+incompatible
+	github.com/docker/cli v29.9.2+incompatible
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/moby/moby/api v1.56.1
 	github.com/moby/moby/client v0.6.2
