@@ -11,15 +11,15 @@ require (
 	github.com/cyberphone/json-canonicalization v0.0.0-20241213102144-19d51d7fe467
 	github.com/distribution/distribution/v3 v3.1.2
 	github.com/distribution/reference v0.6.1-0.20240718132515-8c942b0459df
-	github.com/docker/cli v29.9.2+incompatible
+	github.com/docker/cli v29.10.0+incompatible
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/moby/moby/api v1.56.1
-	github.com/moby/moby/client v0.6.2
+	github.com/moby/moby/api v1.57.0
+	github.com/moby/moby/client v0.6.3
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
-	golang.org/x/sync v0.24.0
+	golang.org/x/sync v0.25.0
 	gotest.tools/v3 v3.5.2
 )
 
